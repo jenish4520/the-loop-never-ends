@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="seda_project.control_alt_defeat.gamebox.NetworkIntegrationTest" time="1.689" tests="5" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="25"/>
+    <property name="sun.cpu.isalist" value="amd64"/>
+    <property name="sun.jnu.encoding" value="Cp1252"/>
+    <property name="java.class.path" value="C:\Users\vibho\Downloads\the-loop-never-ends-main\the-loop-never-ends-main\target\test-classes;C:\Users\vibho\.m2\repository\org\openjfx\javafx-controls\21.0.1\javafx-controls-21.0.1.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-graphics\21.0.1\javafx-graphics-21.0.1.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-base\21.0.1\javafx-base-21.0.1.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-fxml\21.0.1\javafx-fxml-21.0.1.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter\5.10.2\junit-jupiter-5.10.2.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.2\junit-jupiter-api-5.10.2.jar;C:\Users\vibho\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\vibho\.m2\repository\org\junit\platform\junit-platform-commons\1.10.2\junit-platform-commons-1.10.2.jar;C:\Users\vibho\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.10.2\junit-jupiter-params-5.10.2.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\vibho\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;"/>
+    <property name="java.vm.vendor" value="JetBrains s.r.o."/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="user.variant" value=""/>
+    <property name="java.vendor.url" value="https://www.jetbrains.com/"/>
+    <property name="user.timezone" value="Europe/Berlin"/>
+    <property name="user.country.format" value="DE"/>
+    <property name="os.name" value="Windows 11"/>
+    <property name="java.vm.specification.version" value="25"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="GB"/>
+    <property name="sun.boot.library.path" value="C:\Program Files\JetBrains\IntelliJ IDEA 2026.1\jbr\bin"/>
+    <property name="sun.java.command" value="org.apache.maven.surefire.booter.ForkedBooter C:\Users\vibho\AppData\Local\Temp\surefire15388928646987120907 2026-05-29T10-07-59_010-jvmRun1 surefire-20260529100759699_1tmp surefire_0-20260529100759699_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="C:\Users\vibho\Downloads\the-loop-never-ends-main\the-loop-never-ends-main\target\test-classes;C:\Users\vibho\.m2\repository\org\openjfx\javafx-controls\21.0.1\javafx-controls-21.0.1.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-graphics\21.0.1\javafx-graphics-21.0.1.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-base\21.0.1\javafx-base-21.0.1.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-fxml\21.0.1\javafx-fxml-21.0.1.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter\5.10.2\junit-jupiter-5.10.2.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.2\junit-jupiter-api-5.10.2.jar;C:\Users\vibho\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\vibho\.m2\repository\org\junit\platform\junit-platform-commons\1.10.2\junit-platform-commons-1.10.2.jar;C:\Users\vibho\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.10.2\junit-jupiter-params-5.10.2.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\vibho\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="C:\Users\vibho"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="jdk.module.path" value="C:\Users\vibho\Downloads\the-loop-never-ends-main\the-loop-never-ends-main\target\classes;C:\Users\vibho\.m2\repository\org\openjfx\javafx-controls\21.0.1\javafx-controls-21.0.1-win.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-graphics\21.0.1\javafx-graphics-21.0.1-win.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-base\21.0.1\javafx-base-21.0.1-win.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-fxml\21.0.1\javafx-fxml-21.0.1-win.jar"/>
+    <property name="java.version.date" value="2026-01-20"/>
+    <property name="java.home" value="C:\Program Files\JetBrains\IntelliJ IDEA 2026.1\jbr"/>
+    <property name="file.separator" value="\"/>
+    <property name="basedir" value="C:\Users\vibho\Downloads\the-loop-never-ends-main\the-loop-never-ends-main"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="intellij.os.virtualization" value="none"/>
+    <property name="jbr.virtualization.information" value="Hyper-V role"/>
+    <property name="surefire.real.class.path" value="C:\Users\vibho\.m2\repository\org\apache\maven\surefire\surefire-booter\3.2.5\surefire-booter-3.2.5.jar;C:\Users\vibho\.m2\repository\org\apache\maven\surefire\surefire-api\3.2.5\surefire-api-3.2.5.jar;C:\Users\vibho\.m2\repository\org\apache\maven\surefire\surefire-logger-api\3.2.5\surefire-logger-api-3.2.5.jar;C:\Users\vibho\.m2\repository\org\apache\maven\surefire\surefire-shared-utils\3.2.5\surefire-shared-utils-3.2.5.jar;C:\Users\vibho\.m2\repository\org\apache\maven\surefire\surefire-extensions-spi\3.2.5\surefire-extensions-spi-3.2.5.jar;C:\Users\vibho\Downloads\the-loop-never-ends-main\the-loop-never-ends-main\target\test-classes;C:\Users\vibho\.m2\repository\org\openjfx\javafx-controls\21.0.1\javafx-controls-21.0.1.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-graphics\21.0.1\javafx-graphics-21.0.1.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-base\21.0.1\javafx-base-21.0.1.jar;C:\Users\vibho\.m2\repository\org\openjfx\javafx-fxml\21.0.1\javafx-fxml-21.0.1.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter\5.10.2\junit-jupiter-5.10.2.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.2\junit-jupiter-api-5.10.2.jar;C:\Users\vibho\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\vibho\.m2\repository\org\junit\platform\junit-platform-commons\1.10.2\junit-platform-commons-1.10.2.jar;C:\Users\vibho\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.10.2\junit-jupiter-params-5.10.2.jar;C:\Users\vibho\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\vibho\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;C:\Users\vibho\.m2\repository\org\apache\maven\surefire\surefire-junit-platform\3.2.5\surefire-junit-platform-3.2.5.jar;C:\Users\vibho\.m2\repository\org\apache\maven\surefire\common-java5\3.2.5\common-java5-3.2.5.jar;C:\Users\vibho\.m2\repository\org\junit\platform\junit-platform-launcher\1.10.2\junit-platform-launcher-1.10.2.jar"/>
+    <property name="user.script" value=""/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="25.0.2+1-b329.117"/>
+    <property name="user.name" value="vibho"/>
+    <property name="stdout.encoding" value="Cp1252"/>
+    <property name="path.separator" value=";"/>
+    <property name="os.version" value="10.0"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="java.vendor.version" value="JBR-25.0.2+1-329.117-jcef"/>
+    <property name="localRepository" value="C:\Users\vibho\.m2\repository"/>
+    <property name="java.vendor.url.bug" value="https://youtrack.jetbrains.com/issues/JBR"/>
+    <property name="java.io.tmpdir" value="C:\Users\vibho\AppData\Local\Temp\"/>
+    <property name="java.version" value="25.0.2"/>
+    <property name="user.dir" value="C:\Users\vibho\Downloads\the-loop-never-ends-main\the-loop-never-ends-main"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="sun.os.patch.level" value=""/>
+    <property name="native.encoding" value="Cp1252"/>
+    <property name="java.library.path" value="C:\Program Files\JetBrains\IntelliJ IDEA 2026.1\jbr\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:/Users/vibho/.gemini/antigravity-ide/bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files\Python312\Scripts\;C:\Program Files\Python312\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\WireGuard\;C:\Program Files (x86)\Microsoft SQL Server\160\Tools\Binn\;C:\Program Files\Microsoft SQL Server\160\Tools\Binn\;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;C:\Program Files\Microsoft SQL Server\160\DTS\Binn\;C:\Program Files (x86)\Microsoft SQL Server\160\DTS\Binn\;C:\Program Files\Java\jdk-23\bin;C:\Program Files\Git\cmd;C:\Program Files\PowerShell\7\;C:\Program Files\JetBrains\IntelliJ IDEA 2026.1\plugins\maven\lib\maven3\bin;C:\Program Files\PostgreSQL\17\bin;C:\Users\vibho\AppData\Local\Microsoft\WindowsApps;C:\Program Files\JetBrains\PyCharm Community Edition 2024.3.1.1\bin;;C:\Users\vibho\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files\JetBrains\IntelliJ IDEA 2026.1\jbr;C:\Program Files\JetBrains\IntelliJ IDEA 2026.1\jbr\bin;C:\Users\vibho\AppData\Local\Programs\Antigravity\bin;C:\Users\vibho\AppData\Local\Programs\Antigravity IDE\bin;."/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="stderr.encoding" value="Cp1252"/>
+    <property name="java.vendor" value="JetBrains s.r.o."/>
+    <property name="java.vm.version" value="25.0.2+1-b329.117"/>
+    <property name="stdin.encoding" value="Cp1252"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="69.0"/>
+  </properties>
+  <testcase name="testHostClientConnection" classname="seda_project.control_alt_defeat.gamebox.NetworkIntegrationTest" time="0.376"/>
+  <testcase name="testStateUpdateRoundTrip" classname="seda_project.control_alt_defeat.gamebox.NetworkIntegrationTest" time="0.342"/>
+  <testcase name="testConnectionLossDetection" classname="seda_project.control_alt_defeat.gamebox.NetworkIntegrationTest" time="0.315"/>
+  <testcase name="testGameStartMessage" classname="seda_project.control_alt_defeat.gamebox.NetworkIntegrationTest" time="0.329"/>
+  <testcase name="testCardClickMessage" classname="seda_project.control_alt_defeat.gamebox.NetworkIntegrationTest" time="0.313"/>
+</testsuite>
