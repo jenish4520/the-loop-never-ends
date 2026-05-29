@@ -49,7 +49,7 @@ public class TetrisApp {
         stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDING, e -> closeNetwork());
     }
 
-    /** Closes any active network connections before navigating away. */
+    // Clean up LAN sockets on close or navigation
     private void closeNetwork() {
         if (activeHost != null) {
             activeHost.close();

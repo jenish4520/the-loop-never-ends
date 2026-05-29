@@ -87,7 +87,7 @@ public class GameLogic {
         if (currentTime - lastFall > p.getFallDelay()) {
             Tetromino moved = piece.copy();
             moved.y++;
-            if (p.board.isValid(moved)) {
+            if (isValidWithPeer(p, moved, secondPiece)) {
                 setPiece(p, secondPiece, moved);
                 setLastFallTime(p, secondPiece, currentTime);
                 checkActivePowerups(p, secondPiece);
@@ -105,13 +105,40 @@ public class GameLogic {
         if (lockStart > 0 && (currentTime - lockStart > 500 || lockResets >= 15)) {
             Tetromino moved = piece.copy();
             moved.y++;
-            if (!p.board.isValid(moved)) {
+            if (!isValidWithPeer(p, moved, secondPiece)) {
                 if (secondPiece) lockPiece2(p);
                 else lockPiece(p);
             } else {
                 setLockStartTime(p, secondPiece, 0);
             }
         }
+    }
+
+    // Checks if the piece is valid on the board and does not overlap the other active piece.
+    private boolean isValidWithPeer(PlayerState p, Tetromino t, boolean isSecondPiece) {
+        if (!p.board.isValid(t)) return false;
+        if (!twoBlocksMode) return true;
+        // Choose the OTHER active piece as the peer
+        Tetromino peer = isSecondPiece ? p.activePiece : p.activePiece2;
+        if (peer == null) return true;
+        int[][] shape1 = t.getShape();
+        int[][] shape2 = peer.getShape();
+        for (int r1 = 0; r1 < shape1.length; r1++) {
+            for (int c1 = 0; c1 < shape1[r1].length; c1++) {
+                if (shape1[r1][c1] == 1) {
+                    for (int r2 = 0; r2 < shape2.length; r2++) {
+                        for (int c2 = 0; c2 < shape2[r2].length; c2++) {
+                            if (shape2[r2][c2] == 1
+                                    && t.x + c1 == peer.x + c2
+                                    && t.y + r1 == peer.y + r2) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private void spawnSwapPowerup() {
@@ -399,12 +426,64 @@ public class GameLogic {
         if (twoBlocksMode) movePiece(p, true, dx);
     }
 
+    // ---- Per-piece public methods for two-blocks independent control ----
+
+    public void moveLeftPiece1(PlayerState p) {
+        if (p.isGameOver) return;
+        movePiece(p, false, (p.id == 1) ? -1 : 1);
+    }
+
+    public void moveRightPiece1(PlayerState p) {
+        if (p.isGameOver) return;
+        movePiece(p, false, (p.id == 1) ? 1 : -1);
+    }
+
+    public void moveLeftPiece2(PlayerState p) {
+        if (p.isGameOver) return;
+        movePiece(p, true, (p.id == 1) ? -1 : 1);
+    }
+
+    public void moveRightPiece2(PlayerState p) {
+        if (p.isGameOver) return;
+        movePiece(p, true, (p.id == 1) ? 1 : -1);
+    }
+
+    public void rotateCWPiece1(PlayerState p) {
+        rotatePiece(p, false, true);
+    }
+
+    public void rotateCWPiece2(PlayerState p) {
+        rotatePiece(p, true, true);
+    }
+
+    public void hardDropPiece1(PlayerState p) {
+        if (p.isGameOver) return;
+        if (hardDropPiece(p, false)) lockPiece(p);
+    }
+
+    public void hardDropPiece2(PlayerState p) {
+        if (p.isGameOver) return;
+        if (p.activePiece2 != null && hardDropPiece(p, true)) lockPiece2(p);
+    }
+
+    public void softDropPiece1(PlayerState p) {
+        if (p.isGameOver) return;
+        softDropPiece(p, false);
+    }
+
+    public void softDropPiece2(PlayerState p) {
+        if (p.isGameOver) return;
+        softDropPiece(p, true);
+    }
+
+    // ---- End per-piece methods ----
+
     private void movePiece(PlayerState p, boolean secondPiece, int dx) {
         Tetromino piece = getPiece(p, secondPiece);
         if (piece == null) return;
         Tetromino moved = piece.copy();
         moved.x += dx;
-        if (p.board.isValid(moved)) {
+        if (isValidWithPeer(p, moved, secondPiece)) {
             setPiece(p, secondPiece, moved);
             resetLock(p, secondPiece);
             checkActivePowerups(p, secondPiece);
@@ -424,7 +503,7 @@ public class GameLogic {
 
         Tetromino moved = piece.copy();
         moved.y++;
-        if (p.board.isValid(moved)) {
+        if (isValidWithPeer(p, moved, secondPiece)) {
             setPiece(p, secondPiece, moved);
             setLastFallTime(p, secondPiece, System.currentTimeMillis());
             checkActivePowerups(p, secondPiece);
@@ -446,7 +525,7 @@ public class GameLogic {
         while (true) {
             Tetromino moved = piece.copy();
             moved.y++;
-            if (!p.board.isValid(moved)) break;
+            if (!isValidWithPeer(p, moved, secondPiece)) break;
             setPiece(p, secondPiece, moved);
             piece = moved;
             dropped++;
@@ -485,7 +564,7 @@ public class GameLogic {
             Tetromino test = t.copy();
             test.x += (p.id == 1) ? kick[0] : -kick[0];
             test.y += (p.id == 1) ? -kick[1] : kick[1];
-            if (p.board.isValid(test)) {
+            if (isValidWithPeer(p, test, secondPiece)) {
                 setPiece(p, secondPiece, test);
                 resetLock(p, secondPiece);
                 checkActivePowerups(p, secondPiece);
@@ -509,19 +588,19 @@ public class GameLogic {
 
     public Tetromino getGhost(PlayerState p) {
         if (p.activePiece == null || p.activePiece.isSpecial()) return null;
-        return ghostFor(p, p.activePiece);
+        return ghostFor(p, p.activePiece, false);
     }
 
     public Tetromino getGhost2(PlayerState p) {
         if (p.activePiece2 == null || p.activePiece2.isSpecial()) return null;
-        return ghostFor(p, p.activePiece2);
+        return ghostFor(p, p.activePiece2, true);
     }
 
-    private Tetromino ghostFor(PlayerState p, Tetromino piece) {
+    private Tetromino ghostFor(PlayerState p, Tetromino piece, boolean isSecondPiece) {
         Tetromino ghost = piece.copy();
         while (true) {
             ghost.y++;
-            if (!p.board.isValid(ghost)) {
+            if (!isValidWithPeer(p, ghost, isSecondPiece)) {
                 ghost.y--;
                 break;
             }

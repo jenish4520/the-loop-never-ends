@@ -27,7 +27,6 @@ public class TetrisPanel extends StackPane {
     private boolean isLanHost = false;
     private java.util.function.Consumer<TetrisMessage.Type> outMessage;
 
-    // tracking which keys are down
     private Set<KeyCode> activeKeys = new HashSet<>();
     private long lastDAS_P1 = 0;
     private long lastDAS_P2 = 0;
@@ -35,6 +34,14 @@ public class TetrisPanel extends StackPane {
     private long lastRepeat_P2 = 0;
     private boolean initialDAS_P1 = false;
     private boolean initialDAS_P2 = false;
+
+    // Extra DAS state for two-blocks mode (second piece per player)
+    private long lastDAS_P1b = 0;
+    private long lastDAS_P2b = 0;
+    private long lastRepeat_P1b = 0;
+    private long lastRepeat_P2b = 0;
+    private boolean initialDAS_P1b = false;
+    private boolean initialDAS_P2b = false;
 
     private Button restartBtn;
 
@@ -77,6 +84,18 @@ public class TetrisPanel extends StackPane {
         setOnKeyPressed(e -> activeKeys.add(e.getCode()));
         setOnKeyReleased(e -> {
             activeKeys.remove(e.getCode());
+            // Two-blocks mode: reset DAS for each independent key
+            if (logic != null && logic.twoBlocksMode) {
+                // P1 piece1: LEFT / RIGHT
+                if (e.getCode() == KeyCode.LEFT || e.getCode() == KeyCode.RIGHT) initialDAS_P1 = false;
+                // P1 piece2: COMMA / SLASH
+                if (e.getCode() == KeyCode.COMMA || e.getCode() == KeyCode.SLASH) initialDAS_P1b = false;
+                // P2 piece1: A / D
+                if (e.getCode() == KeyCode.A || e.getCode() == KeyCode.D) initialDAS_P2 = false;
+                // P2 piece2: F / H
+                if (e.getCode() == KeyCode.F || e.getCode() == KeyCode.H) initialDAS_P2b = false;
+                return;
+            }
             if (logic != null && logic.horizontalMode) {
                 boolean horizontal = e.getCode() == KeyCode.UP || e.getCode() == KeyCode.DOWN
                         || e.getCode() == KeyCode.W || e.getCode() == KeyCode.S;
@@ -190,6 +209,71 @@ public class TetrisPanel extends StackPane {
             return;
         }
 
+        // ---- Two-blocks mode: fully independent controls per piece ----
+        if (logic.twoBlocksMode) {
+            // P1 piece1: LEFT / RIGHT arrows (move), UP = rotate, DOWN = hard drop (handled in key press)
+            if (activeKeys.contains(KeyCode.LEFT)) {
+                if (!initialDAS_P1) {
+                    logic.moveLeftPiece1(logic.p1); initialDAS_P1 = true; lastDAS_P1 = now;
+                } else if (now - lastDAS_P1 > 170 && now - lastRepeat_P1 > 50) {
+                    logic.moveLeftPiece1(logic.p1); lastRepeat_P1 = now;
+                }
+            } else if (activeKeys.contains(KeyCode.RIGHT)) {
+                if (!initialDAS_P1) {
+                    logic.moveRightPiece1(logic.p1); initialDAS_P1 = true; lastDAS_P1 = now;
+                } else if (now - lastDAS_P1 > 170 && now - lastRepeat_P1 > 50) {
+                    logic.moveRightPiece1(logic.p1); lastRepeat_P1 = now;
+                }
+            }
+
+            // P1 piece2: COMMA (,) / SLASH (/) (move), L = rotate, PERIOD (.) = hard drop (handled in key press)
+            if (activeKeys.contains(KeyCode.COMMA)) {
+                if (!initialDAS_P1b) {
+                    logic.moveLeftPiece2(logic.p1); initialDAS_P1b = true; lastDAS_P1b = now;
+                } else if (now - lastDAS_P1b > 170 && now - lastRepeat_P1b > 50) {
+                    logic.moveLeftPiece2(logic.p1); lastRepeat_P1b = now;
+                }
+            } else if (activeKeys.contains(KeyCode.SLASH)) {
+                if (!initialDAS_P1b) {
+                    logic.moveRightPiece2(logic.p1); initialDAS_P1b = true; lastDAS_P1b = now;
+                } else if (now - lastDAS_P1b > 170 && now - lastRepeat_P1b > 50) {
+                    logic.moveRightPiece2(logic.p1); lastRepeat_P1b = now;
+                }
+            }
+
+            // P2 piece1: A / D (move), S = rotate, W = hard drop (handled in key press)
+            if (activeKeys.contains(KeyCode.A)) {
+                if (!initialDAS_P2) {
+                    logic.moveLeftPiece1(logic.p2); initialDAS_P2 = true; lastDAS_P2 = now;
+                } else if (now - lastDAS_P2 > 170 && now - lastRepeat_P2 > 50) {
+                    logic.moveLeftPiece1(logic.p2); lastRepeat_P2 = now;
+                }
+            } else if (activeKeys.contains(KeyCode.D)) {
+                if (!initialDAS_P2) {
+                    logic.moveRightPiece1(logic.p2); initialDAS_P2 = true; lastDAS_P2 = now;
+                } else if (now - lastDAS_P2 > 170 && now - lastRepeat_P2 > 50) {
+                    logic.moveRightPiece1(logic.p2); lastRepeat_P2 = now;
+                }
+            }
+
+            // P2 piece2: F / H (move), T = rotate, G = hard drop (handled in key press)
+            if (activeKeys.contains(KeyCode.F)) {
+                if (!initialDAS_P2b) {
+                    logic.moveLeftPiece2(logic.p2); initialDAS_P2b = true; lastDAS_P2b = now;
+                } else if (now - lastDAS_P2b > 170 && now - lastRepeat_P2b > 50) {
+                    logic.moveLeftPiece2(logic.p2); lastRepeat_P2b = now;
+                }
+            } else if (activeKeys.contains(KeyCode.H)) {
+                if (!initialDAS_P2b) {
+                    logic.moveRightPiece2(logic.p2); initialDAS_P2b = true; lastDAS_P2b = now;
+                } else if (now - lastDAS_P2b > 170 && now - lastRepeat_P2b > 50) {
+                    logic.moveRightPiece2(logic.p2); lastRepeat_P2b = now;
+                }
+            }
+            return;
+        }
+        // ---- End two-blocks mode input ----
+
         if (logic.horizontalMode) {
             // Horizontal Mode Controls (P1 falls RIGHT, P2 falls LEFT)
             if (activeKeys.contains(KeyCode.DOWN)) {
@@ -265,6 +349,26 @@ public class TetrisPanel extends StackPane {
                 }
                 return;
             }
+            // ---- Two-blocks mode: independent per-piece single-press actions ----
+            if (logic.twoBlocksMode) {
+                switch(e.getCode()) {
+                    // P1 piece1
+                    case UP:     logic.rotateCWPiece1(logic.p1);  break;  // rotate piece1
+                    case DOWN:   logic.hardDropPiece1(logic.p1);  break;  // hard drop piece1
+                    // P1 piece2
+                    case L:      logic.rotateCWPiece2(logic.p1);  break;  // rotate piece2
+                    case PERIOD: logic.hardDropPiece2(logic.p1);  break;  // hard drop piece2
+                    // P2 piece1
+                    case S:      logic.rotateCWPiece1(logic.p2);  break;  // rotate piece1
+                    case W:      logic.hardDropPiece1(logic.p2);  break;  // hard drop piece1
+                    // P2 piece2
+                    case T:      logic.rotateCWPiece2(logic.p2);  break;  // rotate piece2
+                    case G:      logic.hardDropPiece2(logic.p2);  break;  // hard drop piece2
+                    default: break;
+                }
+                return;
+            }
+            // ---- End two-blocks mode key events ----
             if (logic.horizontalMode) {
                 switch(e.getCode()) {
                     case LEFT:  logic.hardDrop(logic.p1); break;
@@ -454,6 +558,29 @@ public class TetrisPanel extends StackPane {
                 gc.setFill(Color.web("#ff9900"));
                 gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
                 gc.fillText("\u27f3 ROT. LOCKED", effX, effY);
+                effX += 100;
+            }
+
+            // Controls legend in two-blocks mode (horizontal layout)
+            if (logic.twoBlocksMode) {
+                double ctrlX = textX + 260; // shift to the right
+                double ctrlY = textY;
+                gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 11));
+                gc.setFill(Color.web("#a882ff"));
+                gc.fillText("Controls:", ctrlX, ctrlY);
+                
+                gc.setFont(Font.font("SansSerif", 10));
+                if (p.id == 1) {
+                    gc.setFill(Color.web("#00d2ff"));
+                    gc.fillText("Blk1  \u2190\u2192  Rotate:\u2191  Drop:\u2193", ctrlX, ctrlY + 13);
+                    gc.setFill(Color.web("#ff6b9d"));
+                    gc.fillText("Blk2  ,/   Rotate: L  Drop: .", ctrlX, ctrlY + 26);
+                } else {
+                    gc.setFill(Color.web("#00d2ff"));
+                    gc.fillText("Blk1  A/D  Rotate: S  Drop: W", ctrlX, ctrlY + 13);
+                    gc.setFill(Color.web("#ff6b9d"));
+                    gc.fillText("Blk2  F/H  Rotate: T  Drop: G", ctrlX, ctrlY + 26);
+                }
             }
         } else {
             gc.setFill(Color.web("#8c8caa"));
@@ -485,6 +612,30 @@ public class TetrisPanel extends StackPane {
                 gc.setFill(Color.web("#ff9900"));
                 gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
                 gc.fillText("\u27f3 ROT. LOCKED", textX, effY);
+                effY += 16;
+            }
+
+            // Controls legend in two-blocks mode
+            if (logic.twoBlocksMode) {
+                effY += 6;
+                gc.setFont(Font.font("SansSerif", FontWeight.BOLD, 11));
+                gc.setFill(Color.web("#a882ff"));
+                gc.fillText("Controls:", textX, effY);
+                effY += 14;
+                gc.setFont(Font.font("SansSerif", 10));
+                if (p.id == 1) {
+                    // Player 1 controls
+                    gc.setFill(Color.web("#00d2ff"));
+                    gc.fillText("Blk1  \u2190\u2192  Rotate:\u2191  Drop:\u2193", textX, effY); effY += 13;
+                    gc.setFill(Color.web("#ff6b9d"));
+                    gc.fillText("Blk2  ,/   Rotate: L  Drop: .", textX, effY);
+                } else {
+                    // Player 2 controls
+                    gc.setFill(Color.web("#00d2ff"));
+                    gc.fillText("Blk1  A/D  Rotate: S  Drop: W", textX, effY); effY += 13;
+                    gc.setFill(Color.web("#ff6b9d"));
+                    gc.fillText("Blk2  F/H  Rotate: T  Drop: G", textX, effY);
+                }
             }
         }
 
@@ -726,7 +877,7 @@ public class TetrisPanel extends StackPane {
         return new double[]{rx, ry};
     }
 
-    /** Convenience wrapper for power-up positions. */
+    // Helper for converting board grid coordinates to render positions for power-ups.
     private double[] pwPos(double offX, double offY, int bx, int by, PlayerState p, boolean horiz) {
         return toRenderPos(offX, offY, bx, by, p, horiz);
     }
