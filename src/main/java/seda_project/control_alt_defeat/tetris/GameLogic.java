@@ -448,7 +448,7 @@ public class GameLogic {
         if (twoBlocksMode) movePiece(p, true, dx);
     }
 
-    // ---- Per-piece public methods for two-blocks independent control ----
+    // Per-piece public methods for two-blocks mode
 
     public void moveLeftPiece1(PlayerState p) {
         if (p.isGameOver) return;
@@ -510,7 +510,7 @@ public class GameLogic {
         softDropPiece(p, true);
     }
 
-    // ---- End per-piece methods ----
+
 
     private void movePiece(PlayerState p, boolean secondPiece, int dx) {
         Tetromino piece = getPiece(p, secondPiece);

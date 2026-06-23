@@ -138,7 +138,7 @@ public class TetrisApp {
         });
 
         speedRow.getChildren().addAll(speedLabel, speedDown, speedValue, speedUp);
-        // ─────────────────────────────────────────────────────────────────
+
 
         HBox toolsRow = new HBox(24);
         toolsRow.setAlignment(Pos.CENTER);
@@ -237,7 +237,6 @@ public class TetrisApp {
 
         Scene scene = new Scene(panel, 1100, 750);
         stage.setScene(scene);
-        stage.centerOnScreen();
 
         panel.setupKeyEvents();
         panel.start();
@@ -355,7 +354,6 @@ public class TetrisApp {
 
                         Scene scene = new Scene(panel, 1100, 750);
                         stage.setScene(scene);
-                        stage.centerOnScreen();
                         panel.start();
                     });
                 } catch (Exception ex) {
@@ -483,7 +481,6 @@ public class TetrisApp {
                         });
                         panel.setupKeyEvents();
                         stage.setScene(new Scene(panel, 1100, 750));
-                        stage.centerOnScreen();
                         panel.start();
                     });
                 } catch (Exception ex) {

@@ -42,11 +42,6 @@ public class GameBox {
         this.stage = stage;
         this.hub = hub;
         stage.setTitle("Memory Game - LAN Multiplayer");
-        stage.setWidth(900);
-        stage.setHeight(650);
-        stage.setMinWidth(900);
-        stage.setMinHeight(650);
-        stage.centerOnScreen();
 
         stage.setOnCloseRequest(e -> cleanup());
 

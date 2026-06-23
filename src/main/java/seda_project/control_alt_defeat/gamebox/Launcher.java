@@ -9,6 +9,13 @@ public class Launcher extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        primaryStage.setFullScreenExitHint(""); // Optional: remove the annoying ESC message if desired
+        primaryStage.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                primaryStage.setFullScreen(true);
+            }
+        });
+        primaryStage.setFullScreen(true);
         GameHub hub = new GameHub(primaryStage);
         hub.show();
     }

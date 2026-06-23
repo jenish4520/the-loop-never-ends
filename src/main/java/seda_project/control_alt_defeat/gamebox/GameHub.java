@@ -30,10 +30,7 @@ public class GameHub {
     public GameHub(Stage stage) {
         this.stage = stage;
         stage.setTitle("Retro Games");
-        stage.setWidth(950);
-        stage.setHeight(650);
-        stage.setMinWidth(950);
-        stage.setMinHeight(650);
+        stage.setMaximized(true);
     }
 
     public void show() {

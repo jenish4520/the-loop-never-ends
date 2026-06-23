@@ -31,4 +31,17 @@ public class Piece {
             case KING -> "♚";
         };
     }
+
+    public String getImageName() {
+        String colorPrefix = isWhite() ? "w" : "b";
+        String typeChar = switch (type) {
+            case PAWN -> "P";
+            case ROOK -> "R";
+            case KNIGHT -> "N";
+            case BISHOP -> "B";
+            case QUEEN -> "Q";
+            case KING -> "K";
+        };
+        return "merida/" + colorPrefix + typeChar + ".png";
+    }
 }

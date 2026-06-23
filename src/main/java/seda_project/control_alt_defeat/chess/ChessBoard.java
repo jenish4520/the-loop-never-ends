@@ -23,6 +23,9 @@ public class ChessBoard {
     private int halfMoveClock = 0;
     private final java.util.List<String> positionHistory = new java.util.ArrayList<>();
 
+    public boolean pendingPromotion = false;
+    public int promQ = -999, promR = -999;
+
     public ChessBoard() {
         resetBoard();
     }
@@ -68,6 +71,18 @@ public class ChessBoard {
         this.lastFromR = fr;
         this.lastToQ = tq;
         this.lastToR = tr;
+    }
+
+    public boolean hasPendingPromotion() {
+        return pendingPromotion;
+    }
+
+    public void completePromotion(PieceType type) {
+        if (pendingPromotion) {
+            PieceColor owner = (currentTurn == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
+            setPiece(promQ, promR, new Piece(type, owner));
+            pendingPromotion = false;
+        }
     }
 
     public void resetBoard() {
@@ -229,12 +244,13 @@ public class ChessBoard {
             setPiece(lastToQ, lastToR, null);
         }
 
-        // Auto pawn promotion to Queen at the end rank
         if (p.getType() == PieceType.PAWN) {
             int maxRank = 11 - Math.abs(toQ);
             int rank = (toQ < 0) ? (toR + 6 + toQ) : (toR + 6);
             if ((p.isWhite() && rank == maxRank) || (!p.isWhite() && rank == 1)) {
-                setPiece(toQ, toR, new Piece(PieceType.QUEEN, p.getColor()));
+                pendingPromotion = true;
+                promQ = toQ;
+                promR = toR;
             }
         }
 

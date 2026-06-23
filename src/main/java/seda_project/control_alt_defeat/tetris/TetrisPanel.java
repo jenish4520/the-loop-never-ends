@@ -209,7 +209,7 @@ public class TetrisPanel extends StackPane {
             return;
         }
 
-        // ---- Two-blocks mode: fully independent controls per piece ----
+        // Two-blocks mode input handling
         if (logic.twoBlocksMode) {
             // P1 piece1: LEFT / RIGHT arrows (move), UP = rotate, DOWN = hard drop (handled in key press)
             if (activeKeys.contains(KeyCode.LEFT)) {
@@ -272,7 +272,7 @@ public class TetrisPanel extends StackPane {
             }
             return;
         }
-        // ---- End two-blocks mode input ----
+
 
         if (logic.horizontalMode) {
             // Horizontal Mode Controls (P1 falls RIGHT, P2 falls LEFT)
@@ -349,7 +349,7 @@ public class TetrisPanel extends StackPane {
                 }
                 return;
             }
-            // ---- Two-blocks mode: independent per-piece single-press actions ----
+            // Independent per-piece key actions (Two-blocks mode)
             if (logic.twoBlocksMode) {
                 switch(e.getCode()) {
                     // P1 piece1
@@ -368,7 +368,7 @@ public class TetrisPanel extends StackPane {
                 }
                 return;
             }
-            // ---- End two-blocks mode key events ----
+
             if (logic.horizontalMode) {
                 switch(e.getCode()) {
                     case LEFT:  logic.hardDrop(logic.p1); break;

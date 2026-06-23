@@ -31,7 +31,7 @@ public class CardComponent extends StackPane {
         if (name == null) return null;
         return imageCache.computeIfAbsent(name, k -> {
             try {
-                java.net.URL url = CardComponent.class.getResource("/images/" + k + ".png");
+                java.net.URL url = CardComponent.class.getResource("/images/memoryGame/" + k + ".png");
                 if (url != null) {
                     return new Image(url.toExternalForm());
                 }
