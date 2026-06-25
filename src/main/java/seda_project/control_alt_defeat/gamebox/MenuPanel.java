@@ -117,16 +117,16 @@ public class MenuPanel extends StackPane {
                     selectedMode = Mode.LOCAL;
                     showConfigScreen();
                 }),
-                buildModeCard("⌂", "HOST GAME", "Create a LAN Session", ACCENT_CYAN, () -> {
+                buildModeCard("⌂", "HOST A GAME", "Create a LAN Session", ACCENT_CYAN, () -> {
                     selectedMode = Mode.HOST;
                     showConfigScreen();
                 }),
-                buildModeCard("→", "JOIN GAME", "Connect to a Host", ACCENT_PINK, () -> {
+                buildModeCard("→", "JOIN A GAME", "Connect to a Host", ACCENT_PINK, () -> {
                     selectedMode = Mode.JOIN;
                     showScreen(joinScreen);
                 }));
 
-        Button backBtn = new Button("← Back to Main Menu");
+        Button backBtn = new Button("Back to Main Menu");
         backBtn.setStyle("-fx-background-color: " + toHexString(CARD_BG) + "; -fx-text-fill: " + toHexString(TEXT_DIM)
                 + "; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 10 20;");
         backBtn.setCursor(Cursor.HAND);

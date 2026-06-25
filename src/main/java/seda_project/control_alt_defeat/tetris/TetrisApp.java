@@ -26,11 +26,11 @@ public class TetrisApp {
 
     private Stage stage;
     private GameHub hub;
-    // store these to shut down network on exit
+    // hang on to these so we can shut down the network on exit
     private TetrisHost activeHost;
     private TetrisClient activeClient;
 
-    // FR03 / FR04 advanced options (local game only)
+    // FR03 / FR04 advanced options (local only — not sent over LAN)
     private boolean optTwoBlocks = false;
     private boolean optHorizontal = false;
     private int optSpeedLevel = 3;
@@ -45,11 +45,11 @@ public class TetrisApp {
     public TetrisApp(Stage stage, GameHub hub) {
         this.stage = stage;
         this.hub = hub;
-        // making sure the network shuts down if the window is closed
+        // close sockets if the window is closed mid-game
         stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDING, e -> closeNetwork());
     }
 
-    // Clean up LAN sockets on close or navigation
+    // called when leaving the tetris screen or when the window closes
     private void closeNetwork() {
         if (activeHost != null) {
             activeHost.close();
@@ -282,7 +282,7 @@ public class TetrisApp {
         Button startBtn = new Button("Start Hosting (Port 28080)");
         styleButton(startBtn);
         startBtn.setOnAction(e -> {
-            closeNetwork(); // kill any old sessions first
+            closeNetwork(); // kill any leftover sessions before starting fresh
             startBtn.setDisable(true);
             status.setText("Hosting on Port 28080... Waiting for Player 2.");
 
@@ -471,7 +471,7 @@ public class TetrisApp {
             new Thread(() -> {
                 try {
                     client.connect(ipField.getText(), 28080);
-                    // Send chosen name immediately so host can update P2's display name
+                    // send player name right away so host can show the correct display name
                     TetrisMessage nameMsg = new TetrisMessage(TetrisMessage.Type.PLAYER_NAME);
                     nameMsg.playerName = p2Field.getText();
                     client.send(nameMsg);

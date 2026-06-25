@@ -5,7 +5,7 @@ import java.net.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
-// Network host that listens for a single client connection.
+// Server side — listens on a port, accepts exactly one client, then manages the session.
 public class GameHost implements AutoCloseable {
 
     public static final int DEFAULT_PORT = 5555;
@@ -25,13 +25,13 @@ public class GameHost implements AutoCloseable {
     private final ExecutorService executor = Executors.newFixedThreadPool(3);
     private ScheduledExecutorService heartbeatScheduler;
 
-    // Constructor.
+    // Just wires up the callbacks; nothing opens until startAndWaitForClient() is called.
     public GameHost(Consumer<GameMessage> messageHandler, Runnable onConnectionLost) {
         this.messageHandler = messageHandler;
         this.onConnectionLost = onConnectionLost;
     }
 
-    // Starts listening on port.
+    // Block until a client connects, then do the handshake and start reading.
     public InetAddress startAndWaitForClient(int port) throws IOException {
         serverSocket = new ServerSocket(port);
         serverSocket.setReuseAddress(true);
@@ -46,7 +46,7 @@ public class GameHost implements AutoCloseable {
         out.flush();
         in = new ObjectInputStream(clientSocket.getInputStream());
 
-        // Wait for join request.
+        // wait for the JOIN_REQUEST so we can grab the player's name
         try {
             GameMessage joinMsg = (GameMessage) in.readObject();
             if (joinMsg.getType() != MessageType.JOIN_REQUEST) {
@@ -58,17 +58,17 @@ public class GameHost implements AutoCloseable {
             throw new IOException("Protocol error: " + e.getMessage(), e);
         }
 
-        // Accept join.
+        // tell the client they're in and that they're player 2
         sendMessage(GameMessage.joinAccepted(2));
 
-        // Start background tasks.
+        // kick off the reader loop and the heartbeat pings
         startReaderThread();
         startHeartbeat();
 
         return clientSocket.getInetAddress();
     }
 
-    // Send message.
+    // send a message to the connected client
     public synchronized void sendMessage(GameMessage message) {
         if (!running || out == null)
             return;
@@ -121,12 +121,12 @@ public class GameHost implements AutoCloseable {
         return running;
     }
 
-    // Get client name.
+    // returns whatever name the client gave us when they joined
     public String getClientPlayerName() {
         return clientPlayerName;
     }
 
-    // Get host address.
+    // best-effort local IP; falls back to loopback if we can't determine it
     public String getHostAddress() {
         try {
             return InetAddress.getLocalHost().getHostAddress();

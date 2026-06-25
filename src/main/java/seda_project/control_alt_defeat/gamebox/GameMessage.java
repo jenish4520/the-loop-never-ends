@@ -10,7 +10,7 @@ public class GameMessage implements Serializable {
     private int playerNumber = -1;
     private String message, playerName, p1Name, p2Name;
 
-    // Chess fields
+    // extra fields used only when the message carries a chess move or action
     private int chessFromQ = -999;
     private int chessFromR = -999;
     private int chessToQ = -999;

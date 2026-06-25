@@ -120,11 +120,11 @@ public class GameLogic {
         }
     }
 
-    // Checks if the piece is valid on the board and does not overlap the other active piece.
+    // check that the piece fits on the board and doesn’t overlap the player’s other piece
     private boolean isValidWithPeer(PlayerState p, Tetromino t, boolean isSecondPiece) {
         if (!p.board.isValid(t)) return false;
         if (!twoBlocksMode) return true;
-        // Choose the OTHER active piece as the peer
+        // grab the OTHER piece as the peer to check against
         Tetromino peer = isSecondPiece ? p.activePiece : p.activePiece2;
         if (peer == null) return true;
         int[][] shape1 = t.getShape();
@@ -448,7 +448,7 @@ public class GameLogic {
         if (twoBlocksMode) movePiece(p, true, dx);
     }
 
-    // Per-piece public methods for two-blocks mode
+    // individual piece controls for two-blocks mode
 
     public void moveLeftPiece1(PlayerState p) {
         if (p.isGameOver) return;

@@ -2,7 +2,7 @@ package seda_project.control_alt_defeat.gamebox;
 
 import java.io.Serializable;
 
-// Stores setup parameters.
+// Simple record that bundles matchSize + deckSize together so they travel as one object.
 public record GameConfig(int matchSize, int deckSize) implements Serializable {
     public static final int MIN_MATCH_SIZE = 1, MAX_MATCH_SIZE = 45;
     public static final int MIN_DECK_SIZE = 1, MAX_DECK_SIZE = 45;

@@ -31,7 +31,7 @@ public class Tetromino implements Serializable {
 
     public Type type;
     public String colorHex;
-    // 4 states (0=0, 1=R, 2=2, 3=L)
+    // rotation states: 0=spawn, 1=right, 2=flip, 3=left
     public int[][][] shapes; 
     public int state = 0;
     public int x, y;

@@ -69,7 +69,7 @@ public class ChessApp {
         this.hub = hub;
     }
 
-    /** Entry point — always shows the mode selection screen first. */
+    /** Always start with the mode selection screen. */
     public void show() {
         showModeScreen();
     }
@@ -177,7 +177,7 @@ public class ChessApp {
         showLocalGameScreen();
     }
 
-    /** Called after every move in local/bot mode to let the bot respond. */
+    /** After the player makes a move, let the bot take its turn if it’s black’s go. */
     private void maybeTriggerBot() {
         if (!botMode)
             return;
@@ -187,7 +187,7 @@ public class ChessApp {
             return;
 
         bgExecutor.submit(() -> {
-            // small delay so the player can see their own move first
+            // short pause so the player can actually see their own move
             try {
                 Thread.sleep(350);
             } catch (InterruptedException ignored) {
@@ -196,7 +196,7 @@ public class ChessApp {
             if (botMove != null) {
                 Platform.runLater(() -> {
                     chessBoard.makeMove(botMove.fromQ, botMove.fromR, botMove.toQ, botMove.toR);
-                    // Bot always promotes to Queen
+                    // bot always promotes to Queen — no need for a dialog on its side
                     if (chessBoard.hasPendingPromotion()) {
                         chessBoard.completePromotion(ChessBoard.PieceType.QUEEN);
                     }
@@ -236,7 +236,7 @@ public class ChessApp {
         HBox btnRow = new HBox(14);
         btnRow.setAlignment(Pos.CENTER);
 
-        // The 4 legal promotion choices
+        // the 4 pieces a pawn can promote to
         record PromOpt(String icon, String name, ChessBoard.PieceType type) {
         }
         java.util.List<PromOpt> opts = java.util.List.of(
@@ -245,7 +245,7 @@ public class ChessApp {
                 new PromOpt("♝", "Bishop", ChessBoard.PieceType.BISHOP),
                 new PromOpt("♞", "Knight", ChessBoard.PieceType.KNIGHT));
 
-        // Grab a reference to the current root so we can remove the overlay
+        // get a ref to the current root so we can stack the overlay on top
         javafx.scene.Parent sceneRoot = stage.getScene().getRoot();
         StackPane fullOverlay; // wrapped in scene's root
         if (sceneRoot instanceof StackPane sp) {
@@ -341,7 +341,7 @@ public class ChessApp {
         errorLabel.setFont(Font.font("SansSerif", 14));
         errorLabel.setTextFill(ERROR_RED);
 
-        // ── Background: wait for client ──────────────
+        // wait for a client in the background; update UI on the main thread
         bgExecutor.execute(() -> {
             try {
                 gameHost.startAndWaitForClient(5555);
@@ -451,7 +451,7 @@ public class ChessApp {
                         statusMsg.setTextFill(SUCCESS_GREEN);
                         statusMsg.setText("Connected!  Waiting for host to start the game…");
                     });
-                    // HOST will send CHESS_ACTION("START:…") — handled by handleNetworkMessage
+                // HOST will send CHESS_ACTION("START:…") once the game begins
                 } catch (IOException ex) {
                     Platform.runLater(() -> {
                         statusMsg.setTextFill(ERROR_RED);
@@ -645,7 +645,7 @@ public class ChessApp {
         stage.setScene(scene);
     }
 
-    /** Handles square clicks during a LAN game (enforces turn-locking). */
+    /** Click handler for LAN games — ignore any input when it’s not our turn. */
     private void handleLanSquareClick(int q, int r) {
         // Only allow interaction on the local player's turn
         if (chessBoard.getCurrentTurn() != myColor)
@@ -687,7 +687,7 @@ public class ChessApp {
         updateBoardDisplay();
     }
 
-    /** Send a message through whichever connection is active (host or client). */
+    /** Route the message through whichever connection is open (host or client). */
     private void sendNetworkMessage(GameMessage msg) {
         if (gameHost != null)
             gameHost.sendMessage(msg);
@@ -695,7 +695,7 @@ public class ChessApp {
             gameClient.sendMessage(msg);
     }
 
-    /** Close and nullify any open host/client connections. */
+    /** Shut down and null out any open LAN connections. */
     private void closeLanConnection() {
         if (gameHost != null) {
             gameHost.close();

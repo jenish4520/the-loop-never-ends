@@ -35,7 +35,7 @@ public class TetrisPanel extends StackPane {
     private boolean initialDAS_P1 = false;
     private boolean initialDAS_P2 = false;
 
-    // Extra DAS state for two-blocks mode (second piece per player)
+    // second DAS state variables for two-blocks mode (separate tracking per piece)
     private long lastDAS_P1b = 0;
     private long lastDAS_P2b = 0;
     private long lastRepeat_P1b = 0;
@@ -65,7 +65,7 @@ public class TetrisPanel extends StackPane {
         restartBtn.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 10 28;");
         restartBtn.setVisible(false);
         restartBtn.setOnAction(e -> {
-            // Reset: rebuild logic preserving mode options
+            // rebuild logic but keep the same player names and mode settings
             GameLogic newLogic = new GameLogic(logic.p1.name, logic.p2.name, logic.getSpeedLevel());
             newLogic.twoBlocksMode  = logic.twoBlocksMode;
             newLogic.horizontalMode = logic.horizontalMode;
@@ -84,15 +84,15 @@ public class TetrisPanel extends StackPane {
         setOnKeyPressed(e -> activeKeys.add(e.getCode()));
         setOnKeyReleased(e -> {
             activeKeys.remove(e.getCode());
-            // Two-blocks mode: reset DAS for each independent key
+            // on key release, reset DAS tracking for each piece independently
             if (logic != null && logic.twoBlocksMode) {
-                // P1 piece1: LEFT / RIGHT
+                // P1 piece 1: LEFT / RIGHT arrows
                 if (e.getCode() == KeyCode.LEFT || e.getCode() == KeyCode.RIGHT) initialDAS_P1 = false;
-                // P1 piece2: COMMA / SLASH
+                // P1 piece 2: COMMA / SLASH
                 if (e.getCode() == KeyCode.COMMA || e.getCode() == KeyCode.SLASH) initialDAS_P1b = false;
-                // P2 piece1: A / D
+                // P2 piece 1: A / D
                 if (e.getCode() == KeyCode.A || e.getCode() == KeyCode.D) initialDAS_P2 = false;
-                // P2 piece2: F / H
+                // P2 piece 2: F / H
                 if (e.getCode() == KeyCode.F || e.getCode() == KeyCode.H) initialDAS_P2b = false;
                 return;
             }

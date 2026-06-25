@@ -3,7 +3,7 @@ package seda_project.control_alt_defeat.gamebox;
 import java.io.Serializable;
 import java.util.Objects;
 
-// Card data record.
+// Holds the state for one card on the board (face-up, matched, who matched it, etc.).
 public class Card implements Serializable {
     private final int id;
     private final String symbol;

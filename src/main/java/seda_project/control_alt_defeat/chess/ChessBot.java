@@ -15,7 +15,7 @@ public class ChessBot {
             return legalMoves.get(0);
         }
 
-        // 1. Look for mate in one
+        // 1. grab the win immediately if there's a mate in one
         ChessBoard.PieceColor opponentColor = (botColor == ChessBoard.PieceColor.WHITE) ? ChessBoard.PieceColor.BLACK : ChessBoard.PieceColor.WHITE;
         for (Move move : legalMoves) {
             if (isMoveDeliveringCheckmate(board, move.fromQ, move.fromR, move.toQ, move.toR, botColor)) {
@@ -23,7 +23,7 @@ public class ChessBot {
             }
         }
 
-        // 2. Filter moves to avoid allowing opponent mate in one
+        // 2. don't play moves that let the opponent mate us next turn
         List<Move> safeMoves = new ArrayList<>();
         for (Move move : legalMoves) {
             Piece p = board.getPiece(move.fromQ, move.fromR);
@@ -40,7 +40,7 @@ public class ChessBot {
                 }
             }
 
-            // Revert
+            // put the board back the way it was
             board.setPiece(move.fromQ, move.fromR, p);
             board.setPiece(move.toQ, move.toR, originalTarget);
 
@@ -111,18 +111,18 @@ public class ChessBot {
         Piece p = board.getPiece(fromQ, fromR);
         Piece originalTarget = board.getPiece(toQ, toR);
 
-        // Make move
+        // try the move on a scratch copy of the board
         board.setPiece(toQ, toR, p);
         board.setPiece(fromQ, fromR, null);
 
-        // Check opponent's status
+        // check if the opponent is now in checkmate
         ChessBoard.PieceColor originalTurn = board.getCurrentTurn();
         ChessBoard.PieceColor defenderColor = (attackerColor == ChessBoard.PieceColor.WHITE) ? ChessBoard.PieceColor.BLACK : ChessBoard.PieceColor.WHITE;
         board.setCurrentTurn(defenderColor);
 
         boolean isMate = ChessRules.isInCheck(board, defenderColor) && !ChessRules.hasValidMoves(board, defenderColor);
 
-        // Revert move and turn
+        // undo the move and restore the turn
         board.setCurrentTurn(originalTurn);
         board.setPiece(fromQ, fromR, p);
         board.setPiece(toQ, toR, originalTarget);

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-// Core logic and state.
+// Handles all the rules and score-keeping for the memory card game.
 public class GameLogic {
 
     public static final String[] SYMBOL_POOL = {
@@ -29,7 +29,7 @@ public class GameLogic {
     private int matchSize;
     private int deckSize;
 
-    // Initialize game.
+    // wipe the old game and set up a fresh shuffled deck
     public synchronized void initializeGame(GameConfig config) {
         this.matchSize = config.getMatchSize();
         this.deckSize = config.getDeckSize();
@@ -41,7 +41,7 @@ public class GameLogic {
         this.cards = generateDeck(config);
     }
 
-    // Generate deck.
+    // fill the deck with the right number of copies of each symbol, then shuffle
     private List<Card> generateDeck(GameConfig config) {
         int uniqueSymbols = config.getUniqueSymbolCount();
         if (uniqueSymbols > SYMBOL_POOL.length) {
@@ -60,7 +60,7 @@ public class GameLogic {
         return deck;
     }
 
-    // Process click.
+    // called whenever a player taps a card
     public synchronized boolean handleCardClick(int cardIndex, int playerNumber) {
         if (phase != GamePhase.PLAYING) return false;
         if (playerNumber != activePlayer) return false;
@@ -79,7 +79,7 @@ public class GameLogic {
         return true;
     }
 
-    // Resolve cards.
+    // called once the player has picked n cards — figure out if they matched
     private void resolveAttempt() {
         String firstSymbol = cards.get(currentAttempt.get(0)).getSymbol();
         boolean allMatch = currentAttempt.stream()
@@ -104,7 +104,7 @@ public class GameLogic {
         }
     }
 
-    // Flip mismatched.
+    // flip the wrong cards back and hand the turn to the other player
     public synchronized void resolveMismatch() {
         if (phase != GamePhase.RESOLVING) return;
 
@@ -116,12 +116,12 @@ public class GameLogic {
         phase = GamePhase.PLAYING;
     }
 
-    // Get state.
+    // overload for when we don't need a custom status message
     public synchronized GameState getState() {
         return getState("");
     }
 
-    // Get state with msg.
+    // snapshot the board and attach a message (e.g. "Player 1's turn!")
     public synchronized GameState getState(String statusMessage) {
         return new GameState(
             cards, player1Score, player2Score,
@@ -138,7 +138,7 @@ public class GameLogic {
     public synchronized int getDeckSize() { return deckSize; }
     public synchronized List<Integer> getCurrentAttempt() { return new ArrayList<>(currentAttempt); }
 
-    // Get matched count.
+    // handy for the status bar — how many cards are already off the board?
     public synchronized int getMatchedCount() {
         return (int) cards.stream().filter(Card::isMatched).count();
     }

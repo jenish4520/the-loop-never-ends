@@ -13,7 +13,7 @@ public class PlayerState implements Serializable {
     public Tetromino nextPiece;
     public List<Tetromino> bag = new ArrayList<>();
 
-    // Second active piece state
+    // state for the second falling piece (two-blocks mode only)
     public Tetromino activePiece2 = null;
     public Tetromino nextPiece2 = null;
     public long lastFallTime2 = 0;
@@ -92,7 +92,7 @@ public class PlayerState implements Serializable {
         lockStartTime = 0;
     }
 
-    // Spawn the second piece offsetting it to avoid overlap
+    // spawn the second piece offset from the first so they don’t spawn on top of each other
     public void spawnNext2() {
         activePiece2 = nextPiece2.queuedCopy();
         nextPiece2 = pullFromBag();
@@ -117,12 +117,12 @@ public class PlayerState implements Serializable {
         int delay = 1200 - (speedLevel * 150) - ((linesCleared / 2) * 50);
         if (delay < 60) delay = 60;
 
-        // Apply slow down modifier
+        // slow-down power-up doubles the delay
         if (System.currentTimeMillis() < slowDownEndTime) {
             delay = delay * 2;
         }
 
-        // Apply speed up modifier
+        // speed-up power-up cuts it in half
         if (System.currentTimeMillis() < speedUpEndTime) {
             delay = delay / 2;
         }

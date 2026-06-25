@@ -9,7 +9,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-// this class handles the main game flow
+// Ties together the menu, game panel, and networking for the memory game.
 
 public class GameBox {
 
@@ -19,11 +19,11 @@ public class GameBox {
     private MenuPanel menuPanel;
     private GamePanel gamePanel;
 
-    // keep track of the game's current state
+    // game state and config — shared between menu and in-game logic
     private GameLogic gameLogic;
     private GameConfig currentConfig;
 
-    // networking related variables
+    // LAN host/client sockets and flags
     private GameHost gameHost;
     private GameClient gameClient;
     private boolean isHost;
@@ -52,7 +52,7 @@ public class GameBox {
         stage.show();
     }
 
-    // Show menu.
+    // Back to the mode-selection menu.
     private void showMenu() {
         menuPanel = new MenuPanel(
                 this::startLocalGame,
@@ -140,7 +140,7 @@ public class GameBox {
         }, "host-setup").start();
     }
 
-    // process messages coming from the host
+    // only the host side cares about messages — clients just receive state updates
     private void onHostReceivedMessage(GameMessage msg) {
         switch (msg.getType()) {
             case CARD_CLICK -> handleRemoteCardClick(msg.getCardIndex());
@@ -150,7 +150,7 @@ public class GameBox {
         }
     }
 
-    // when a remote player clicks a card
+    // remote card flip — validate on host then broadcast
     private void handleRemoteCardClick(int cardIndex) {
         if (!isHost)
             return;
@@ -298,7 +298,7 @@ public class GameBox {
         }
     }
 
-    // sync the state with other players
+    // push state to UI and, if hosting, also send it over the wire
     private void broadcastState(GameState state) {
         Platform.runLater(() -> {
             if (gamePanel != null) {

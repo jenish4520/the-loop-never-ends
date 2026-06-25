@@ -4,7 +4,7 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 
 
-// Entry point.
+// JavaFX application entry class.
 public class Launcher extends Application {
 
     @Override
@@ -20,7 +20,7 @@ public class Launcher extends Application {
         hub.show();
     }
 
-    // Launch app.
+    // Main execution block.
     public static void main(String[] args) {
         launch(args);
     }

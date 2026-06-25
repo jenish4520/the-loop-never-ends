@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-// Game state snapshot.
+// Read-only snapshot of the board that gets passed around and sent over the wire.
 public record GameState(List<Card> cards, int player1Score, int player2Score, int activePlayer, GamePhase phase,
         List<Integer> currentAttempt, int matchSize, int deckSize, String statusMessage) implements Serializable {
     public GameState {

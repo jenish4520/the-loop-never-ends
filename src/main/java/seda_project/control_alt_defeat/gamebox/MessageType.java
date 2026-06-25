@@ -1,26 +1,26 @@
 package seda_project.control_alt_defeat.gamebox;
 
-// Message types.
+// Identifiers for the various network packets sent during a LAN game.
 public enum MessageType {
-    // Join request.
+    // Sent by client to ask to join.
     JOIN_REQUEST,
 
-    // Join accepted.
+    // Sent by host to approve a join.
     JOIN_ACCEPTED,
 
-    // Game started.
+    // Sent by host to begin the match.
     GAME_START,
 
-    // Card clicked.
+    // Sent by client to report a move.
     CARD_CLICK,
 
-    // State updated.
+    // Sent by host to synchronize the board.
     STATE_UPDATE,
 
-    // Game ended.
+    // Indicates someone has won.
     GAME_END,
 
-    // Restart requested.
+    // Request a match restart.
     RESTART_REQUEST,
 
     // Restart confirmed.

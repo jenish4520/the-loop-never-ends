@@ -1,16 +1,16 @@
 package seda_project.control_alt_defeat.gamebox;
 
-// Game phase enum.
+// Defines the high-level states the game loop cycles through.
 public enum GamePhase {
-    // Waiting.
+    // Waiting for the game to officially start.
     LOBBY,
 
-    // Playing.
+    // Active turn, players are making choices.
     PLAYING,
 
-    // Resolving.
+    // Brief pause to display mismatched results before flipping back.
     RESOLVING,
 
-    // Over.
+    // Match concluded, waiting to return to menu or restart.
     GAME_OVER
 }

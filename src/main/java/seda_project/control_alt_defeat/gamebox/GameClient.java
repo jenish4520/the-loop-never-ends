@@ -5,7 +5,7 @@ import java.net.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
-// Network client.
+// Client-side networking: opens a TCP socket to the host and drives the message loop.
 public class GameClient implements AutoCloseable {
 
     private static final long HEARTBEAT_INTERVAL_MS = 3000;
@@ -22,13 +22,13 @@ public class GameClient implements AutoCloseable {
     private ScheduledExecutorService heartbeatScheduler;
     private int playerNumber;
 
-    // Constructor.
+    // Just stores the callbacks; actual connection happens in connect().
     public GameClient(Consumer<GameMessage> messageHandler, Runnable onConnectionLost) {
         this.messageHandler = messageHandler;
         this.onConnectionLost = onConnectionLost;
     }
 
-    // Connect to host.
+    // Open the socket, do the handshake, then kick off background threads.
     public int connect(String hostAddress, int port, String playerName) throws IOException {
         socket = new Socket();
         socket.connect(new InetSocketAddress(hostAddress, port), 5000);
@@ -41,10 +41,10 @@ public class GameClient implements AutoCloseable {
 
         running = true;
 
-        // Send join.
+        // send our name so the host knows who joined
         sendMessage(GameMessage.joinRequest(playerName));
 
-        // Wait for accept.
+        // wait for the host to confirm and tell us our player number
         try {
             GameMessage response = (GameMessage) in.readObject();
             if (response.getType() != MessageType.JOIN_ACCEPTED) {
@@ -55,14 +55,14 @@ public class GameClient implements AutoCloseable {
             throw new IOException("Protocol error: " + e.getMessage(), e);
         }
 
-        // Start tasks.
+        // reader thread for incoming messages + heartbeat to keep the socket alive
         startReaderThread();
         startHeartbeat();
 
         return playerNumber;
     }
 
-    // Send message.
+    // serialize and write the message; drop it silently if the socket is gone
     public synchronized void sendMessage(GameMessage message) {
         if (!running || out == null) return;
         try {
