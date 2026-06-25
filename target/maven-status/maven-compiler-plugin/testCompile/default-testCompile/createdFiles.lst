@@ -1,0 +1,9 @@
+seda_project\control_alt_defeat\gamebox\GameLogicTest.class
+seda_project\control_alt_defeat\gamebox\NetworkIntegrationTest.class
+seda_project\control_alt_defeat\gamebox\ExampleTest.class
+seda_project\control_alt_defeat\gamebox\GameMessageTest.class
+seda_project\control_alt_defeat\chess\ChessTest.class
+seda_project\control_alt_defeat\gamebox\GameStateTest.class
+seda_project\control_alt_defeat\tetris\PowerButtonTest.class
+seda_project\control_alt_defeat\gamebox\CardTest.class
+seda_project\control_alt_defeat\gamebox\GameConfigTest.class

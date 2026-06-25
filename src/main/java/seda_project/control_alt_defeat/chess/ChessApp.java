@@ -7,8 +7,10 @@ import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -62,7 +64,25 @@ public class ChessApp {
 
     private Label turnLabel;
     private Label statusLabel;
+    private Label whiteScoreLabel;
+    private Label blackScoreLabel;
+    private Label drawOfferLabel;
+    private Button offerDrawBtn;
+    private Button acceptDrawBtn;
+    private Button declineDrawBtn;
     private final double radius = 33.0;
+
+    private boolean gameOver = false;
+    private String resultMessage = "";
+    private double whiteScore = 0.0;
+    private double blackScore = 0.0;
+    private ChessBoard.PieceColor drawOfferBy = null;
+
+    private boolean customEditorMode = false;
+    private ChessBoard.PieceColor customStartingTurn = ChessBoard.PieceColor.WHITE;
+    private ChessBoard.PieceColor customPieceColor = ChessBoard.PieceColor.WHITE;
+    private ChessBoard.PieceType customPieceType = ChessBoard.PieceType.KING;
+    private boolean customEraseMode = false;
 
     public ChessApp(Stage stage, GameHub hub) {
         this.stage = stage;
@@ -80,6 +100,7 @@ public class ChessApp {
 
     private void showModeScreen() {
         closeLanConnection();
+        customEditorMode = false;
 
         VBox root = new VBox(10);
         root.setAlignment(Pos.CENTER);
@@ -101,7 +122,8 @@ public class ChessApp {
                 buildModeCard("💻", "LOCAL GAME", "Two Players, One Screen", ACCENT_PURPLE, this::startLocalGame),
                 buildModeCard("⌂", "HOST A GAME", "Create a LAN Session", ACCENT_CYAN, this::showHostScreen),
                 buildModeCard("→", "JOIN A GAME", "Connect to a Host", ACCENT_PINK, this::showJoinScreen),
-                buildModeCard("", "VS COMPUTER", "Play Against the Chess Bot", SUCCESS_GREEN, this::startBotGame));
+                buildModeCard("", "VS COMPUTER", "Play Against the Chess Bot", SUCCESS_GREEN, this::startBotGame),
+                buildModeCard("C", "CUSTOM POSITION", "Build Your Own Start", ACCENT_PURPLE, this::showCustomPositionScreen));
 
         Button backBtn = new Button("← Back to Main Menu");
         backBtn.setStyle("-fx-background-color: " + toHex(CARD_BG) + "; -fx-text-fill: " + toHex(TEXT_DIM)
@@ -115,7 +137,7 @@ public class ChessApp {
 
         root.getChildren().addAll(title, subtitle, cardsRow, backRow);
 
-        Scene scene = new Scene(root, 1050, 650);
+        Scene scene = new Scene(root, 1320, 650);
         stage.setTitle("Chess — Select Mode");
         stage.setScene(scene);
     }
@@ -155,10 +177,12 @@ public class ChessApp {
     // ─────────────────────────────────────────────────────────────────────────
 
     private void startLocalGame() {
+        customEditorMode = false;
         lanMode = false;
         myColor = null;
         botMode = false;
         chessBoard = new ChessBoard();
+        resetGameState();
         selectedQ = -999;
         selectedR = -999;
         showLocalGameScreen();
@@ -168,10 +192,12 @@ public class ChessApp {
     private boolean botMode = false;
 
     private void startBotGame() {
+        customEditorMode = false;
         lanMode = false;
         myColor = null;
         botMode = true;
         chessBoard = new ChessBoard();
+        resetGameState();
         selectedQ = -999;
         selectedR = -999;
         showLocalGameScreen();
@@ -179,6 +205,8 @@ public class ChessApp {
 
     /** After the player makes a move, let the bot take its turn if it’s black’s go. */
     private void maybeTriggerBot() {
+        if (gameOver)
+            return;
         if (!botMode)
             return;
         if (chessBoard.getCurrentTurn() != ChessBoard.PieceColor.BLACK)
@@ -195,7 +223,11 @@ public class ChessApp {
             Move botMove = chessBoard.getBotMove(ChessBoard.PieceColor.BLACK);
             if (botMove != null) {
                 Platform.runLater(() -> {
+                    if (gameOver)
+                        return;
+                    ChessBoard.PieceColor movingColor = chessBoard.getCurrentTurn();
                     chessBoard.makeMove(botMove.fromQ, botMove.fromR, botMove.toQ, botMove.toR);
+                    revokeDrawOfferAfterMove(movingColor);
                     // bot always promotes to Queen — no need for a dialog on its side
                     if (chessBoard.hasPendingPromotion()) {
                         chessBoard.completePromotion(ChessBoard.PieceType.QUEEN);
@@ -219,6 +251,11 @@ public class ChessApp {
      * @param isLan          true if we should NOT call maybeTriggerBot afterwards
      */
     private void showPromotionDialog(ChessBoard.PieceColor promotingColor, boolean isLan) {
+        showPromotionDialog(promotingColor, isLan, null);
+    }
+
+    private void showPromotionDialog(ChessBoard.PieceColor promotingColor, boolean isLan,
+                                     java.util.function.Consumer<ChessBoard.PieceType> afterPromotion) {
         // Build an overlay pane
         StackPane overlay = new StackPane();
         overlay.setStyle("-fx-background-color: rgba(0,0,0,0.72);");
@@ -298,6 +335,9 @@ public class ChessApp {
                 chessBoard.completePromotion(opt.type());
                 selectedQ = -999;
                 selectedR = -999;
+                if (afterPromotion != null) {
+                    afterPromotion.accept(opt.type());
+                }
                 updateBoardDisplay();
                 if (!isLan)
                     maybeTriggerBot();
@@ -314,7 +354,10 @@ public class ChessApp {
 
     private void showHostScreen() {
         closeLanConnection();
+        customEditorMode = false;
+        botMode = false;
         chessBoard = new ChessBoard();
+        resetGameState();
         gameHost = new GameHost(this::handleNetworkMessage, this::handleConnectionLost);
 
         String hostIp = gameHost.getHostAddress();
@@ -386,6 +429,9 @@ public class ChessApp {
 
     private void showJoinScreen() {
         closeLanConnection();
+        customEditorMode = false;
+        botMode = false;
+        resetGameState();
 
         VBox root = new VBox(22);
         root.setAlignment(Pos.CENTER);
@@ -479,14 +525,18 @@ public class ChessApp {
         Platform.runLater(() -> {
             switch (msg.getType()) {
                 case CHESS_MOVE -> {
+                    ChessBoard.PieceColor movingColor = chessBoard.getCurrentTurn();
                     // Opponent made a move — apply it and redraw
-                    chessBoard.makeMove(
+                    boolean moved = chessBoard.makeMove(
                             msg.getChessFromQ(), msg.getChessFromR(),
                             msg.getChessToQ(), msg.getChessToR());
                     // If the opponent's move caused a pawn promotion, auto-promote to Queen
                     // (the opponent already showed a choice dialog on their side)
-                    if (chessBoard.hasPendingPromotion()) {
-                        chessBoard.completePromotion(ChessBoard.PieceType.QUEEN);
+                    if (moved && chessBoard.hasPendingPromotion()) {
+                        chessBoard.completePromotion(parsePromotionType(msg.getChessPromotion()));
+                    }
+                    if (moved) {
+                        revokeDrawOfferAfterMove(movingColor);
                     }
                     selectedQ = -999;
                     selectedR = -999;
@@ -502,6 +552,7 @@ public class ChessApp {
                         String boardState = action.substring(6);
                         chessBoard = new ChessBoard();
                         chessBoard.deserializeBoard(boardState);
+                        resetGameState();
                         myColor = ChessBoard.PieceColor.BLACK;
                         lanMode = true;
                         selectedQ = -999;
@@ -510,14 +561,27 @@ public class ChessApp {
 
                     } else if (action.equals("RESIGN")) {
                         // Opponent resigned
-                        String winner = (myColor == ChessBoard.PieceColor.WHITE) ? "White" : "Black";
+                        finishByResignation(opposite(myColor));
+                        String winner = colorName(myColor);
                         if (statusLabel != null) {
                             statusLabel.setText("Opponent resigned!\n" + winner + " wins! 🎉");
                             statusLabel.setTextFill(SUCCESS_GREEN);
                         }
 
+                    } else if (action.equals("DRAW_OFFER")) {
+                        drawOfferBy = opposite(myColor);
+                        updateBoardDisplay();
+
+                    } else if (action.equals("DRAW_ACCEPT")) {
+                        finishDraw("Draw agreed.");
+
+                    } else if (action.equals("DRAW_DECLINE")) {
+                        drawOfferBy = null;
+                        updateBoardDisplay();
+
                     } else if (action.equals("RESTART")) {
                         chessBoard.resetBoard();
+                        resetGameState();
                         selectedQ = -999;
                         selectedR = -999;
                         updateBoardDisplay();
@@ -615,14 +679,9 @@ public class ChessApp {
         statusLabel.setWrapText(true);
         statusLabel.setAlignment(Pos.CENTER);
 
-        // Resign button
-        Button resignBtn = new Button("🏳  Resign");
-        styleButton(resignBtn, ERROR_RED);
-        resignBtn.setOnAction(e -> {
-            sendNetworkMessage(GameMessage.chessAction("RESIGN"));
-            statusLabel.setText("You resigned.\nOpponent wins.");
-            statusLabel.setTextFill(ERROR_RED);
-        });
+        VBox scoreCard = buildScoreCard();
+        drawOfferLabel = buildDrawOfferLabel();
+        VBox actionPanel = buildActionPanel();
 
         Button modeBtn = new Button("Change Mode");
         styleButton(modeBtn, ACCENT_PURPLE);
@@ -635,7 +694,7 @@ public class ChessApp {
             hub.show();
         });
 
-        sidebar.getChildren().addAll(roleCard, turnCard, statusLabel, resignBtn, modeBtn, menuBtn);
+        sidebar.getChildren().addAll(roleCard, turnCard, scoreCard, statusLabel, drawOfferLabel, actionPanel, modeBtn, menuBtn);
         root.setRight(sidebar);
 
         updateBoardDisplay();
@@ -647,6 +706,8 @@ public class ChessApp {
 
     /** Click handler for LAN games — ignore any input when it’s not our turn. */
     private void handleLanSquareClick(int q, int r) {
+        if (gameOver)
+            return;
         // Only allow interaction on the local player's turn
         if (chessBoard.getCurrentTurn() != myColor)
             return;
@@ -665,17 +726,17 @@ public class ChessApp {
         } else {
             if (chessBoard.isValidMove(selectedQ, selectedR, q, r)) {
                 int fromQ = selectedQ, fromR = selectedR;
+                ChessBoard.PieceColor movingColor = chessBoard.getCurrentTurn();
                 chessBoard.makeMove(fromQ, fromR, q, r);
+                revokeDrawOfferAfterMove(movingColor);
                 selectedQ = -999;
                 selectedR = -999;
-                // Broadcast move first (promotion is resolved locally and auto-queened
-                // remotely)
-                sendNetworkMessage(GameMessage.chessMove(fromQ, fromR, q, r));
-                // Handle promotion choice if needed (turn hasn't switched yet in pending state)
                 if (chessBoard.hasPendingPromotion()) {
-                    showPromotionDialog(chessBoard.getCurrentTurn(), true);
+                    showPromotionDialog(movingColor, true,
+                            type -> sendNetworkMessage(GameMessage.chessMove(fromQ, fromR, q, r, type.name())));
                     return;
                 }
+                sendNetworkMessage(GameMessage.chessMove(fromQ, fromR, q, r));
             } else if (clickedPiece != null && clickedPiece.getColor() == chessBoard.getCurrentTurn()) {
                 selectedQ = q;
                 selectedR = r;
@@ -713,6 +774,7 @@ public class ChessApp {
     // ─────────────────────────────────────────────────────────────────────────
 
     private void showLocalGameScreen() {
+        customEditorMode = false;
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(20));
         root.setBackground(new Background(new BackgroundFill(BG_COLOR, CornerRadii.EMPTY, Insets.EMPTY)));
@@ -768,6 +830,10 @@ public class ChessApp {
         statusLabel.setWrapText(true);
         statusLabel.setAlignment(Pos.CENTER);
 
+        VBox scoreCard = buildScoreCard();
+        drawOfferLabel = buildDrawOfferLabel();
+        VBox actionPanel = buildActionPanel();
+
         Button restartBtn = new Button("Restart Game");
         styleButton(restartBtn, SUCCESS_GREEN);
         restartBtn.setOnAction(e -> restartLocalGame());
@@ -780,7 +846,7 @@ public class ChessApp {
         styleButton(menuBtn, CARD_BG);
         menuBtn.setOnAction(e -> hub.show());
 
-        sidebar.getChildren().addAll(turnCard, statusLabel, restartBtn, modeBtn, menuBtn);
+        sidebar.getChildren().addAll(turnCard, scoreCard, statusLabel, drawOfferLabel, actionPanel, restartBtn, modeBtn, menuBtn);
         root.setRight(sidebar);
 
         updateBoardDisplay();
@@ -822,7 +888,9 @@ public class ChessApp {
                     sq.setLayoutY(cy - radius);
 
                     final int fq = q, fr = r;
-                    if (lan) {
+                    if (customEditorMode) {
+                        sq.setOnMouseClicked(e -> handleCustomSquareClick(fq, fr, e.getButton()));
+                    } else if (lan) {
                         sq.setOnMouseClicked(e -> handleLanSquareClick(fq, fr));
                     } else {
                         sq.setOnMouseClicked(e -> handleLocalSquareClick(fq, fr));
@@ -842,6 +910,11 @@ public class ChessApp {
     private void updateBoardDisplay() {
         if (chessBoard == null || turnLabel == null || statusLabel == null)
             return;
+        if (!customEditorMode) {
+            evaluateGameEnd();
+        }
+        updateScoreLabels();
+        updateActionControls();
 
         // ── Turn label ────────────────────────────
         if (chessBoard.getCurrentTurn() == ChessBoard.PieceColor.WHITE) {
@@ -856,14 +929,17 @@ public class ChessApp {
         boolean currentHasMoves = chessBoard.hasValidMoves(chessBoard.getCurrentTurn());
         String drawReason = chessBoard.checkDrawCriteria(); // 50-move / insuf. material / 3-fold
 
-        if (!currentHasMoves) {
+        if (gameOver) {
+            statusLabel.setText(resultMessage);
+            statusLabel.setTextFill(SUCCESS_GREEN);
+        } else if (!currentHasMoves) {
             boolean inCheck = chessBoard.isInCheck(chessBoard.getCurrentTurn());
             if (inCheck) {
                 String winner = (chessBoard.getCurrentTurn() == ChessBoard.PieceColor.WHITE) ? "Black" : "White";
                 statusLabel.setText("CHECKMATE!\n" + winner + " wins! 🎉");
                 statusLabel.setTextFill(SUCCESS_GREEN);
             } else {
-                statusLabel.setText("STALEMATE — Draw!");
+                statusLabel.setText("STALEMATE!");
                 statusLabel.setTextFill(ACCENT_CYAN);
             }
         } else if (drawReason != null) {
@@ -909,6 +985,10 @@ public class ChessApp {
                         case 1 -> Color.web("#ddbea9");
                         default -> Color.web("#ffe8d6");
                     };
+                    if ((q == chessBoard.getLastFromQ() && r == chessBoard.getLastFromR())
+                            || (q == chessBoard.getLastToQ() && r == chessBoard.getLastToR())) {
+                        baseColor = Color.web("#f2d16b");
+                    }
 
                     // Highlight king in check
                     Piece p = chessBoard.getPiece(q, r);
@@ -968,6 +1048,8 @@ public class ChessApp {
     // ─────────────────────────────────────────────────────────────────────────
 
     private void handleLocalSquareClick(int q, int r) {
+        if (gameOver)
+            return;
         // In bot mode, only allow White to click
         if (botMode && chessBoard.getCurrentTurn() == ChessBoard.PieceColor.BLACK)
             return;
@@ -987,6 +1069,7 @@ public class ChessApp {
             if (chessBoard.isValidMove(selectedQ, selectedR, q, r)) {
                 ChessBoard.PieceColor movingColor = chessBoard.getCurrentTurn();
                 chessBoard.makeMove(selectedQ, selectedR, q, r);
+                revokeDrawOfferAfterMove(movingColor);
                 selectedQ = -999;
                 selectedR = -999;
                 if (chessBoard.hasPendingPromotion()) {
@@ -1009,6 +1092,7 @@ public class ChessApp {
 
     private void restartLocalGame() {
         chessBoard.resetBoard();
+        resetGameState();
         selectedQ = -999;
         selectedR = -999;
         updateBoardDisplay();
@@ -1017,6 +1101,510 @@ public class ChessApp {
     // ─────────────────────────────────────────────────────────────────────────
     // HELPERS
     // ─────────────────────────────────────────────────────────────────────────
+
+    private VBox buildScoreCard() {
+        VBox card = new VBox(8);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(12));
+        card.setBackground(new Background(new BackgroundFill(CARD_BG, new CornerRadii(10), Insets.EMPTY)));
+        card.setStyle("-fx-border-color: #2b3154; -fx-border-radius: 10; -fx-border-width: 1.5;");
+
+        Label title = lbl("POINTS", 11, FontWeight.BOLD, TEXT_DIM);
+        HBox scoreRow = new HBox(14);
+        scoreRow.setAlignment(Pos.CENTER);
+
+        VBox whiteBox = new VBox(3);
+        whiteBox.setAlignment(Pos.CENTER);
+        Label whiteTitle = lbl("White", 12, FontWeight.BOLD, ACCENT_CYAN);
+        whiteScoreLabel = lbl(formatScore(whiteScore), 24, FontWeight.BOLD, TEXT_WHITE);
+        whiteBox.getChildren().addAll(whiteTitle, whiteScoreLabel);
+
+        VBox blackBox = new VBox(3);
+        blackBox.setAlignment(Pos.CENTER);
+        Label blackTitle = lbl("Black", 12, FontWeight.BOLD, ACCENT_PINK);
+        blackScoreLabel = lbl(formatScore(blackScore), 24, FontWeight.BOLD, TEXT_WHITE);
+        blackBox.getChildren().addAll(blackTitle, blackScoreLabel);
+
+        scoreRow.getChildren().addAll(whiteBox, blackBox);
+        card.getChildren().addAll(title, scoreRow);
+        return card;
+    }
+
+    private Label buildDrawOfferLabel() {
+        Label label = new Label("");
+        label.setFont(Font.font("SansSerif", FontWeight.BOLD, 13));
+        label.setTextFill(ACCENT_CYAN);
+        label.setWrapText(true);
+        label.setAlignment(Pos.CENTER);
+        return label;
+    }
+
+    private VBox buildActionPanel() {
+        VBox box = new VBox(8);
+        box.setAlignment(Pos.CENTER);
+
+        offerDrawBtn = new Button("Offer Draw");
+        styleButton(offerDrawBtn, ACCENT_CYAN);
+        offerDrawBtn.setOnAction(e -> offerDraw());
+
+        acceptDrawBtn = new Button("Accept Draw");
+        styleButton(acceptDrawBtn, SUCCESS_GREEN);
+        acceptDrawBtn.setOnAction(e -> acceptDrawOffer());
+
+        declineDrawBtn = new Button("Decline Draw");
+        styleButton(declineDrawBtn, CARD_BG);
+        declineDrawBtn.setOnAction(e -> declineDrawOffer());
+
+        Button resignBtn = new Button("Resign");
+        styleButton(resignBtn, ERROR_RED);
+        resignBtn.setOnAction(e -> resignCurrentPlayer());
+
+        box.getChildren().addAll(offerDrawBtn, acceptDrawBtn, declineDrawBtn, resignBtn);
+        return box;
+    }
+
+    private void resetGameState() {
+        gameOver = false;
+        resultMessage = "";
+        whiteScore = 0.0;
+        blackScore = 0.0;
+        drawOfferBy = null;
+        updateScoreLabels();
+        updateActionControls();
+    }
+
+    private void evaluateGameEnd() {
+        if (gameOver || chessBoard == null) {
+            return;
+        }
+
+        ChessBoard.PieceColor turn = chessBoard.getCurrentTurn();
+        boolean currentHasMoves = chessBoard.hasValidMoves(turn);
+        if (!currentHasMoves) {
+            if (chessBoard.isInCheck(turn)) {
+                finishWin(opposite(turn), "CHECKMATE!\n" + colorName(opposite(turn)) + " wins.");
+            } else {
+                finishStalemate(turn);
+            }
+            return;
+        }
+
+        String drawReason = chessBoard.checkDrawCriteria();
+        if (drawReason != null) {
+            finishDraw("Draw by " + drawReason + ".");
+        }
+    }
+
+    private void finishWin(ChessBoard.PieceColor winner, String message) {
+        whiteScore = winner == ChessBoard.PieceColor.WHITE ? 1.0 : 0.0;
+        blackScore = winner == ChessBoard.PieceColor.BLACK ? 1.0 : 0.0;
+        setFinished(message);
+    }
+
+    private void finishDraw(String message) {
+        whiteScore = 0.5;
+        blackScore = 0.5;
+        setFinished(message + "\nWhite 0.5 - Black 0.5");
+    }
+
+    private void finishStalemate(ChessBoard.PieceColor stalemated) {
+        ChessBoard.PieceColor scorer = opposite(stalemated);
+        whiteScore = scorer == ChessBoard.PieceColor.WHITE ? 0.75 : 0.25;
+        blackScore = scorer == ChessBoard.PieceColor.BLACK ? 0.75 : 0.25;
+        setFinished("STALEMATE!\n" + colorName(scorer) + " gets 0.75, " + colorName(stalemated) + " gets 0.25.");
+    }
+
+    private void finishByResignation(ChessBoard.PieceColor loser) {
+        ChessBoard.PieceColor winner = opposite(loser);
+        finishWin(winner, colorName(loser) + " resigned.\n" + colorName(winner) + " wins.");
+    }
+
+    private void setFinished(String message) {
+        gameOver = true;
+        resultMessage = message;
+        drawOfferBy = null;
+        selectedQ = -999;
+        selectedR = -999;
+        updateScoreLabels();
+        updateActionControls();
+        if (statusLabel != null) {
+            statusLabel.setText(resultMessage);
+            statusLabel.setTextFill(SUCCESS_GREEN);
+        }
+    }
+
+    private void offerDraw() {
+        if (gameOver || chessBoard == null || drawOfferBy != null) {
+            return;
+        }
+        if (botMode && chessBoard.getCurrentTurn() != ChessBoard.PieceColor.WHITE) {
+            return;
+        }
+        if (lanMode) {
+            if (myColor == null) {
+                return;
+            }
+            drawOfferBy = myColor;
+            sendNetworkMessage(GameMessage.chessAction("DRAW_OFFER"));
+        } else {
+            drawOfferBy = chessBoard.getCurrentTurn();
+        }
+        updateBoardDisplay();
+    }
+
+    private void acceptDrawOffer() {
+        if (gameOver || drawOfferBy == null) {
+            return;
+        }
+        if (lanMode) {
+            sendNetworkMessage(GameMessage.chessAction("DRAW_ACCEPT"));
+        }
+        finishDraw("Draw agreed.");
+    }
+
+    private void declineDrawOffer() {
+        if (drawOfferBy == null) {
+            return;
+        }
+        if (lanMode) {
+            sendNetworkMessage(GameMessage.chessAction("DRAW_DECLINE"));
+        }
+        drawOfferBy = null;
+        updateBoardDisplay();
+    }
+
+    private void resignCurrentPlayer() {
+        if (gameOver || chessBoard == null) {
+            return;
+        }
+        ChessBoard.PieceColor loser;
+        if (lanMode && myColor != null) {
+            loser = myColor;
+            sendNetworkMessage(GameMessage.chessAction("RESIGN"));
+        } else if (botMode) {
+            loser = ChessBoard.PieceColor.WHITE;
+        } else {
+            loser = chessBoard.getCurrentTurn();
+        }
+        finishByResignation(loser);
+        updateBoardDisplay();
+    }
+
+    private void revokeDrawOfferAfterMove(ChessBoard.PieceColor movingColor) {
+        if (drawOfferBy != null && drawOfferBy != movingColor) {
+            drawOfferBy = null;
+        }
+    }
+
+    private void updateScoreLabels() {
+        if (whiteScoreLabel != null) {
+            whiteScoreLabel.setText(formatScore(whiteScore));
+        }
+        if (blackScoreLabel != null) {
+            blackScoreLabel.setText(formatScore(blackScore));
+        }
+    }
+
+    private void updateActionControls() {
+        if (drawOfferLabel != null) {
+            if (drawOfferBy == null) {
+                drawOfferLabel.setText("");
+            } else if (lanMode && drawOfferBy == myColor) {
+                drawOfferLabel.setText("Draw offered. Waiting for opponent.");
+            } else if (lanMode) {
+                drawOfferLabel.setText("Opponent offered a draw.");
+            } else if (botMode) {
+                drawOfferLabel.setText("Draw offered to computer.");
+            } else {
+                drawOfferLabel.setText(colorName(drawOfferBy) + " offered a draw.");
+            }
+        }
+
+        boolean offerActive = drawOfferBy != null;
+        if (offerDrawBtn != null) {
+            boolean canOffer = !gameOver && chessBoard != null && !offerActive;
+            if (botMode) {
+                canOffer = canOffer && chessBoard.getCurrentTurn() == ChessBoard.PieceColor.WHITE;
+            }
+            if (lanMode) {
+                canOffer = canOffer && myColor != null;
+            }
+            offerDrawBtn.setDisable(!canOffer);
+        }
+
+        boolean canAnswer = !gameOver && offerActive;
+        if (canAnswer && lanMode) {
+            canAnswer = drawOfferBy != myColor;
+        } else if (canAnswer && botMode) {
+            canAnswer = false;
+        } else if (canAnswer && chessBoard != null) {
+            canAnswer = drawOfferBy != chessBoard.getCurrentTurn();
+        }
+
+        if (acceptDrawBtn != null) {
+            acceptDrawBtn.setVisible(canAnswer);
+            acceptDrawBtn.setManaged(canAnswer);
+        }
+        if (declineDrawBtn != null) {
+            declineDrawBtn.setVisible(canAnswer);
+            declineDrawBtn.setManaged(canAnswer);
+        }
+    }
+
+    private String formatScore(double score) {
+        if (score == 1.0) {
+            return "1";
+        }
+        if (score == 0.75) {
+            return "0.75";
+        }
+        if (score == 0.5) {
+            return "0.5";
+        }
+        if (score == 0.25) {
+            return "0.25";
+        }
+        return "0";
+    }
+
+    private ChessBoard.PieceColor opposite(ChessBoard.PieceColor color) {
+        return color == ChessBoard.PieceColor.WHITE ? ChessBoard.PieceColor.BLACK : ChessBoard.PieceColor.WHITE;
+    }
+
+    private String colorName(ChessBoard.PieceColor color) {
+        return color == ChessBoard.PieceColor.WHITE ? "White" : "Black";
+    }
+
+    private ChessBoard.PieceType parsePromotionType(String value) {
+        if (value != null) {
+            try {
+                return ChessBoard.PieceType.valueOf(value);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return ChessBoard.PieceType.QUEEN;
+    }
+
+    private void showCustomPositionScreen() {
+        closeLanConnection();
+        customEditorMode = true;
+        lanMode = false;
+        botMode = false;
+        myColor = null;
+        chessBoard = new ChessBoard();
+        chessBoard.clearBoard();
+        resetGameState();
+        selectedQ = -999;
+        selectedR = -999;
+        customStartingTurn = ChessBoard.PieceColor.WHITE;
+        customPieceColor = ChessBoard.PieceColor.WHITE;
+        customPieceType = ChessBoard.PieceType.KING;
+        customEraseMode = false;
+
+        BorderPane root = new BorderPane();
+        root.setPadding(new Insets(20));
+        root.setBackground(new Background(new BackgroundFill(BG_COLOR, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        VBox topBox = new VBox(5);
+        topBox.setAlignment(Pos.CENTER);
+        Label title = new Label("CUSTOM POSITION");
+        title.setFont(Font.font("SansSerif", FontWeight.BOLD, 34));
+        title.setTextFill(ACCENT_PURPLE);
+        Label subtitle = new Label("Build a legal Glinski chess start position");
+        subtitle.setFont(Font.font("SansSerif", 14));
+        subtitle.setTextFill(TEXT_DIM);
+        topBox.getChildren().addAll(title, subtitle);
+        root.setTop(topBox);
+
+        Pane boardPane = buildBoardPane(false);
+        HBox boardWrapper = new HBox(boardPane);
+        boardWrapper.setAlignment(Pos.CENTER);
+        root.setCenter(boardWrapper);
+
+        VBox sidebar = new VBox(14);
+        sidebar.setAlignment(Pos.TOP_CENTER);
+        sidebar.setPadding(new Insets(0, 0, 0, 20));
+        sidebar.setPrefWidth(260);
+
+        Label pieceTitle = lbl("PIECE", 12, FontWeight.BOLD, TEXT_DIM);
+        ComboBox<String> pieceBox = new ComboBox<>();
+        pieceBox.getItems().addAll("King", "Queen", "Rook", "Bishop", "Knight", "Pawn", "Erase");
+        pieceBox.setValue("King");
+        pieceBox.setMaxWidth(Double.MAX_VALUE);
+        pieceBox.setOnAction(e -> {
+            String value = pieceBox.getValue();
+            customEraseMode = "Erase".equals(value);
+            if (!customEraseMode) {
+                customPieceType = ChessBoard.PieceType.valueOf(value.toUpperCase());
+            }
+        });
+
+        Label colorTitle = lbl("COLOR", 12, FontWeight.BOLD, TEXT_DIM);
+        ComboBox<String> colorBox = new ComboBox<>();
+        colorBox.getItems().addAll("White", "Black");
+        colorBox.setValue("White");
+        colorBox.setMaxWidth(Double.MAX_VALUE);
+        colorBox.setOnAction(e -> customPieceColor = "White".equals(colorBox.getValue())
+                ? ChessBoard.PieceColor.WHITE : ChessBoard.PieceColor.BLACK);
+
+        Label turnTitle = lbl("STARTING TURN", 12, FontWeight.BOLD, TEXT_DIM);
+        HBox turnRow = new HBox(8);
+        turnRow.setAlignment(Pos.CENTER);
+        Button whiteTurnBtn = new Button("White");
+        Button blackTurnBtn = new Button("Black");
+        styleButton(whiteTurnBtn, ACCENT_CYAN);
+        styleButton(blackTurnBtn, ACCENT_PINK);
+        whiteTurnBtn.setOnAction(e -> {
+            customStartingTurn = ChessBoard.PieceColor.WHITE;
+            chessBoard.setCurrentTurn(customStartingTurn);
+            updateCustomEditorDisplay();
+        });
+        blackTurnBtn.setOnAction(e -> {
+            customStartingTurn = ChessBoard.PieceColor.BLACK;
+            chessBoard.setCurrentTurn(customStartingTurn);
+            updateCustomEditorDisplay();
+        });
+        turnRow.getChildren().addAll(whiteTurnBtn, blackTurnBtn);
+
+        statusLabel = new Label("");
+        statusLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 13));
+        statusLabel.setWrapText(true);
+        statusLabel.setAlignment(Pos.CENTER);
+
+        Button clearBtn = new Button("Clear Board");
+        styleButton(clearBtn, CARD_BG);
+        clearBtn.setOnAction(e -> {
+            chessBoard.clearBoard();
+            chessBoard.setCurrentTurn(customStartingTurn);
+            updateCustomEditorDisplay();
+        });
+
+        Button standardBtn = new Button("Standard Setup");
+        styleButton(standardBtn, ACCENT_PURPLE);
+        standardBtn.setOnAction(e -> {
+            chessBoard.resetBoard();
+            customStartingTurn = ChessBoard.PieceColor.WHITE;
+            chessBoard.setCurrentTurn(customStartingTurn);
+            updateCustomEditorDisplay();
+        });
+
+        Button startBtn = new Button("Start Game");
+        styleButton(startBtn, SUCCESS_GREEN);
+        startBtn.setOnAction(e -> startCustomGameFromEditor());
+
+        Button backBtn = new Button("Change Mode");
+        styleButton(backBtn, CARD_BG);
+        backBtn.setOnAction(e -> showModeScreen());
+
+        sidebar.getChildren().addAll(pieceTitle, pieceBox, colorTitle, colorBox, turnTitle, turnRow,
+                statusLabel, clearBtn, standardBtn, startBtn, backBtn);
+        root.setRight(sidebar);
+
+        updateCustomEditorDisplay();
+
+        Scene scene = new Scene(root, 1200, 850);
+        stage.setTitle("Chess - Custom Position");
+        stage.setScene(scene);
+    }
+
+    private void handleCustomSquareClick(int q, int r, MouseButton button) {
+        if (!customEditorMode) {
+            return;
+        }
+        boolean removePiece = button == MouseButton.SECONDARY || customEraseMode;
+        chessBoard.setPiece(q, r, removePiece ? null : new Piece(customPieceType, customPieceColor));
+        updateCustomEditorDisplay();
+    }
+
+    private void updateCustomEditorDisplay() {
+        if (chessBoard == null || statusLabel == null) {
+            return;
+        }
+        chessBoard.setCurrentTurn(customStartingTurn);
+        String validation = chessBoard.validatePosition(customStartingTurn);
+        if (validation == null) {
+            statusLabel.setText("Position is valid.");
+            statusLabel.setTextFill(SUCCESS_GREEN);
+        } else {
+            statusLabel.setText(validation);
+            statusLabel.setTextFill(ERROR_RED);
+        }
+
+        for (int q = -5; q <= 5; q++) {
+            for (int r = -5; r <= 5; r++) {
+                if (chessBoard.isValidCoord(q, r)) {
+                    StackPane sq = squarePanes[q + 5][r + 5];
+                    if (sq == null) {
+                        continue;
+                    }
+                    sq.getChildren().clear();
+
+                    Polygon hex = new Polygon();
+                    for (int i = 0; i < 6; i++) {
+                        double angleRad = Math.toRadians(i * 60);
+                        hex.getPoints().addAll(radius * Math.cos(angleRad), radius * Math.sin(angleRad));
+                    }
+
+                    int tone = Math.floorMod(q - r, 3);
+                    Color baseColor = switch (tone) {
+                        case 0 -> Color.web("#cb997e");
+                        case 1 -> Color.web("#ddbea9");
+                        default -> Color.web("#ffe8d6");
+                    };
+
+                    Piece p = chessBoard.getPiece(q, r);
+                    if (p != null && p.getType() == ChessBoard.PieceType.KING && chessBoard.isInCheck(p.getColor())) {
+                        baseColor = Color.web("#801a24");
+                    }
+
+                    hex.setFill(baseColor);
+                    hex.setStroke(Color.web("#3a3f61"));
+                    hex.setStrokeWidth(1.5);
+                    sq.getChildren().add(hex);
+
+                    if (p != null) {
+                        addPieceNode(sq, p);
+                    }
+                }
+            }
+        }
+    }
+
+    private void startCustomGameFromEditor() {
+        chessBoard.setCurrentTurn(customStartingTurn);
+        String validation = chessBoard.validatePosition(customStartingTurn);
+        if (validation != null) {
+            statusLabel.setText(validation);
+            statusLabel.setTextFill(ERROR_RED);
+            return;
+        }
+        chessBoard.startFromCurrentPosition();
+        customEditorMode = false;
+        botMode = false;
+        lanMode = false;
+        myColor = null;
+        resetGameState();
+        selectedQ = -999;
+        selectedR = -999;
+        showLocalGameScreen();
+    }
+
+    private void addPieceNode(StackPane sq, Piece p) {
+        String imagePath = "/images/chess/" + p.getImageName();
+        java.net.URL imgUrl = getClass().getResource(imagePath);
+        if (imgUrl != null) {
+            javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(new javafx.scene.image.Image(imgUrl.toExternalForm()));
+            iv.setFitWidth(radius * 1.5);
+            iv.setFitHeight(radius * 1.5);
+            iv.setPreserveRatio(true);
+            sq.getChildren().add(iv);
+        } else {
+            Label pieceLabel = new Label(p.getSymbol());
+            pieceLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 36));
+            pieceLabel.setTextFill(p.isWhite() ? Color.WHITE : Color.BLACK);
+            sq.getChildren().add(pieceLabel);
+        }
+    }
 
     private void styleButton(Button btn, Color bg) {
         btn.setMaxWidth(Double.MAX_VALUE);

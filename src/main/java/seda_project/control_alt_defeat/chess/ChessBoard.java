@@ -82,7 +82,26 @@ public class ChessBoard {
             PieceColor owner = (currentTurn == PieceColor.WHITE) ? PieceColor.BLACK : PieceColor.WHITE;
             setPiece(promQ, promR, new Piece(type, owner));
             pendingPromotion = false;
+            if (positionHistory.isEmpty()) {
+                positionHistory.add(serializeBoard());
+            } else {
+                positionHistory.set(positionHistory.size() - 1, serializeBoard());
+            }
         }
+    }
+
+    public void clearBoard() {
+        for (int q = -5; q <= 5; q++) {
+            for (int r = -5; r <= 5; r++) {
+                if (isValidCoord(q, r)) {
+                    board[q + 5][r + 5] = null;
+                }
+            }
+        }
+        pendingPromotion = false;
+        promQ = -999;
+        promR = -999;
+        startFromCurrentPosition();
     }
 
     public void resetBoard() {

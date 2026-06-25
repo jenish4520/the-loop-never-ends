@@ -16,6 +16,7 @@ public class GameMessage implements Serializable {
     private int chessToQ = -999;
     private int chessToR = -999;
     private String chessAction;
+    private String chessPromotion;
 
     public GameMessage(MessageType type) { this.type = type; }
 
@@ -37,6 +38,12 @@ public class GameMessage implements Serializable {
         m.chessFromR = fromR;
         m.chessToQ = toQ;
         m.chessToR = toR;
+        return m;
+    }
+
+    public static GameMessage chessMove(int fromQ, int fromR, int toQ, int toR, String promotion) {
+        GameMessage m = chessMove(fromQ, fromR, toQ, toR);
+        m.chessPromotion = promotion;
         return m;
     }
 
@@ -62,4 +69,5 @@ public class GameMessage implements Serializable {
     public int getChessToQ() { return chessToQ; }
     public int getChessToR() { return chessToR; }
     public String getChessAction() { return chessAction; }
+    public String getChessPromotion() { return chessPromotion; }
 }
