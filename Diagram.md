@@ -1,3 +1,165 @@
+# Project Diagrams
+Here are the visual diagrams representing the architecture, object relationships, and execution flow of the entire Retro Games Hub.
+## 1. Unified UML Class Diagram
+This diagram highlights the core classes across the three main packages (`gamebox`, `tetris`, `chess`) and how they relate to the `GameHub` orchestrator.
+```mermaid
+classDiagram
+    %% Core Orchestration
+    class Launcher {
+        +start(Stage)
+        +main(String[])
+    }
+    class GameHub {
+        -Stage stage
+        +show()
+    }
+    Launcher --> GameHub : creates
+    %% Memory Game (GameBox Package)
+    namespace GameBox_Package {
+        class GameBox {
+            +showMenu()
+            +startLocalGame()
+        }
+        class GameLogic {
+            +handleCardClick()
+            +resolveMismatch()
+        }
+        class Card {
+            -String symbol
+            -boolean faceUp
+        }
+        class GameHost {
+            +startAndWaitForClient()
+            +sendMessage()
+        }
+        class GameClient {
+            +connect()
+            +sendMessage()
+        }
+    }
+    GameHub --> GameBox : spawns
+    GameBox *-- GameLogic : uses
+    GameBox *-- GameHost : manages
+    GameBox *-- GameClient : manages
+    GameLogic "1" *-- "*" Card : contains
+    %% Chess Package
+    namespace Chess_Package {
+        class ChessApp {
+            +show()
+            -renderBoard()
+        }
+        class ChessBoard {
+            +makeMove()
+            +getValidMoves()
+        }
+        class Piece {
+            -PieceType type
+            -PieceColor color
+        }
+        class ChessBot {
+            +getBestMove()
+        }
+    }
+    GameHub --> ChessApp : spawns
+    ChessApp *-- ChessBoard : displays
+    ChessApp *-- ChessBot : plays against
+    ChessBoard "1" *-- "*" Piece : contains
+    %% Tetris Package
+    namespace Tetris_Package {
+        class TetrisApp {
+            +show()
+            +startLocalGame()
+        }
+        class TetrisLogic {
+            +moveLeft()
+            +hardDrop()
+        }
+        class Tetromino {
+            -int[][] shape
+            +rotateCW()
+        }
+        class CustomPieceDesigner {
+            +exportToJson()
+        }
+    }
+    GameHub --> TetrisApp : spawns
+    TetrisApp *-- TetrisLogic : runs
+    TetrisApp --> CustomPieceDesigner : opens
+    TetrisLogic "1" *-- "*" Tetromino : manipulates
+```
+---
+## 2. Sequence Diagram: LAN Multiplayer Synchronization
+This diagram traces the execution of a network action. It demonstrates the decoupled Observer pattern used across all LAN games in the project (Memory Game & Tetris).
+```mermaid
+sequenceDiagram
+    actor Player2 as Client Player
+    participant Client as GameClient
+    participant Host as GameHost
+    participant Logic as GameLogic (Server-side)
+    participant Panel as UI (Both Screens)
+    Note over Player2, Host: 1. Connection Handshake
+    Player2->>Client: Clicks "Connect to Host"
+    Client->>Host: JOIN_REQUEST (TCP Socket)
+    Host-->>Client: JOIN_ACCEPTED
+    
+    Note over Player2, Panel: 2. Gameplay Interaction
+    Player2->>Panel: Clicks Card / Moves Tetromino
+    Panel->>Client: handleInput()
+    Client->>Host: Send ACTION (GameMessage)
+    
+    Host->>Logic: Apply Action to Master State
+    Logic-->>Host: Return New GameState
+    
+    Note over Host, Panel: 3. State Broadcast
+    Host->>Host: Update Host UI via Platform.runLater()
+    Host->>Client: Broadcast STATE_UPDATE (GameState)
+    Client->>Panel: Update Client UI via Platform.runLater()
+    Panel-->>Player2: Render Frame
+```
+---
+## 3. Control Flow Graph: Application Lifecycle
+This graph visualizes the high-level path a user takes through the application, handling both local and network paths, and demonstrating how the execution loop returns to the `GameHub`.
+```mermaid
+flowchart TD
+    Start((App Launched)) --> L[Launcher.java]
+    L --> Hub[GameHub Menu]
+    
+    Hub -- Select Memory Game --> MG[Memory Game Menu]
+    Hub -- Select Tetris --> TG[Tetris Menu]
+    Hub -- Select Chess --> CG[Chess Menu]
+    
+    %% Game Branches
+    MG --> M_Local[Local Play]
+    MG --> M_LAN[LAN Play]
+    
+    TG --> T_Local[Local Play]
+    TG --> T_LAN[LAN Play]
+    TG --> T_Custom[Custom Piece Designer]
+    T_Custom -. Save & Exit .-> TG
+    
+    CG --> C_Bot[Play vs AI]
+    CG --> C_Local[Local 2-Player]
+    
+    %% Unifying logic for LAN vs Local
+    M_LAN --> LAN_Lobby{Connect/Host}
+    T_LAN --> LAN_Lobby
+    
+    LAN_Lobby -- Success --> GameLoop
+    LAN_Lobby -- Failure --> Error[Show Connection Error]
+    Error -. Back .-> Hub
+    
+    M_Local --> GameLoop[Active Game Loop / Rendering]
+    T_Local --> GameLoop
+    C_Bot --> GameLoop
+    C_Local --> GameLoop
+    
+    %% End conditions
+    GameLoop --> WinCondition{Checkmate / Matches Found / Top Out}
+    WinCondition -- Game Over --> EndScreen[Victory/Defeat Screen]
+    
+    EndScreen -- Restart --> GameLoop
+    EndScreen -- Exit --> Hub
+    GameLoop -- Quit Early --> Hub
     
     Hub --> ExitApp((Close Application))
 ```
